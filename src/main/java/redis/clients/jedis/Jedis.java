@@ -38,94 +38,70 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
   public Jedis() {
     super();
   }
-
   public Jedis(final String host) {
     super(host);
   }
-
   public Jedis(final HostAndPort hp) {
     super(hp);
   }
-
   public Jedis(final String host, final int port) {
     super(host, port);
   }
-
   public Jedis(final String host, final int port, final boolean ssl) {
     super(host, port, ssl);
   }
-
-  public Jedis(final String host, final int port, final boolean ssl,
-      final SSLSocketFactory sslSocketFactory, final SSLParameters sslParameters,
-      final HostnameVerifier hostnameVerifier) {
+  public Jedis(final String host, final int port, final boolean ssl, final SSLSocketFactory sslSocketFactory, final SSLParameters sslParameters, final HostnameVerifier hostnameVerifier) {
     super(host, port, ssl, sslSocketFactory, sslParameters, hostnameVerifier);
   }
-
   public Jedis(final String host, final int port, final int timeout) {
     super(host, port, timeout);
   }
-
   public Jedis(final String host, final int port, final int timeout, final boolean ssl) {
     super(host, port, timeout, ssl);
   }
-
-  public Jedis(final String host, final int port, final int timeout, final boolean ssl,
-      final SSLSocketFactory sslSocketFactory, final SSLParameters sslParameters,
-      final HostnameVerifier hostnameVerifier) {
+  public Jedis(final String host, final int port, final int timeout, final boolean ssl, final SSLSocketFactory sslSocketFactory, final SSLParameters sslParameters, final HostnameVerifier hostnameVerifier) {
     super(host, port, timeout, ssl, sslSocketFactory, sslParameters, hostnameVerifier);
   }
-
   public Jedis(final String host, final int port, final int connectionTimeout, final int soTimeout) {
     super(host, port, connectionTimeout, soTimeout);
   }
-
-  public Jedis(final String host, final int port, final int connectionTimeout, final int soTimeout,
-      final boolean ssl) {
+  public Jedis(final String host, final int port, final int connectionTimeout, final int soTimeout, final boolean ssl) {
     super(host, port, connectionTimeout, soTimeout, ssl);
   }
-
-  public Jedis(final String host, final int port, final int connectionTimeout, final int soTimeout,
-      final boolean ssl, final SSLSocketFactory sslSocketFactory, final SSLParameters sslParameters,
-      final HostnameVerifier hostnameVerifier) {
+  public Jedis(final String host, final int port, final int connectionTimeout, final int soTimeout, final boolean ssl, final SSLSocketFactory sslSocketFactory, final SSLParameters sslParameters, final HostnameVerifier hostnameVerifier) {
     super(host, port, connectionTimeout, soTimeout, ssl, sslSocketFactory, sslParameters,
         hostnameVerifier);
   }
-
   public Jedis(JedisShardInfo shardInfo) {
     super(shardInfo);
   }
-
   public Jedis(URI uri) {
     super(uri);
   }
-
-  public Jedis(URI uri, final SSLSocketFactory sslSocketFactory, final SSLParameters sslParameters,
-      final HostnameVerifier hostnameVerifier) {
+  public Jedis(URI uri, final SSLSocketFactory sslSocketFactory, final SSLParameters sslParameters, final HostnameVerifier hostnameVerifier) {
     super(uri, sslSocketFactory, sslParameters, hostnameVerifier);
   }
-
   public Jedis(final URI uri, final int timeout) {
     super(uri, timeout);
   }
-
-  public Jedis(final URI uri, final int timeout, final SSLSocketFactory sslSocketFactory,
-      final SSLParameters sslParameters, final HostnameVerifier hostnameVerifier) {
+  public Jedis(final URI uri, final int timeout, final SSLSocketFactory sslSocketFactory, final SSLParameters sslParameters, final HostnameVerifier hostnameVerifier) {
     super(uri, timeout, sslSocketFactory, sslParameters, hostnameVerifier);
   }
-
   public Jedis(final URI uri, final int connectionTimeout, final int soTimeout) {
     super(uri, connectionTimeout, soTimeout);
   }
-
-  public Jedis(final URI uri, final int connectionTimeout, final int soTimeout,
-      final SSLSocketFactory sslSocketFactory, final SSLParameters sslParameters,
-      final HostnameVerifier hostnameVerifier) {
+  public Jedis(final URI uri, final int connectionTimeout, final int soTimeout, final SSLSocketFactory sslSocketFactory, final SSLParameters sslParameters, final HostnameVerifier hostnameVerifier) {
     super(uri, connectionTimeout, soTimeout, sslSocketFactory, sslParameters, hostnameVerifier);
   }
-
   public Jedis(final JedisSocketFactory jedisSocketFactory) {
     super(jedisSocketFactory);
   }
+
+
+
+
+
+
 
   /**
    * Works same as <tt>ping()</tt> but returns argument message instead of <tt>PONG</tt>.
