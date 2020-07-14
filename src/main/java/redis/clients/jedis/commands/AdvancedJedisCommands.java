@@ -1,72 +1,72 @@
 package redis.clients.jedis.commands;
 
-import java.util.List;
-
 import redis.clients.jedis.AccessControlUser;
-import redis.clients.jedis.params.MigrateParams;
 import redis.clients.jedis.params.ClientKillParams;
+import redis.clients.jedis.params.MigrateParams;
 import redis.clients.jedis.util.Slowlog;
 
+import java.util.List;
+
 public interface AdvancedJedisCommands {
-  List<String> configGet(String pattern);
+    List<String> configGet(String pattern);
 
-  String configSet(String parameter, String value);
+    String configSet(String parameter, String value);
 
-  String slowlogReset();
+    String slowlogReset();
 
-  Long slowlogLen();
+    Long slowlogLen();
 
-  List<Slowlog> slowlogGet();
+    List<Slowlog> slowlogGet();
 
-  List<Slowlog> slowlogGet(long entries);
+    List<Slowlog> slowlogGet(long entries);
 
-  Long objectRefcount(String key);
+    Long objectRefcount(String key);
 
-  String objectEncoding(String key);
+    String objectEncoding(String key);
 
-  Long objectIdletime(String key);
+    Long objectIdletime(String key);
 
-  List<String> objectHelp();
+    List<String> objectHelp();
 
-  Long objectFreq(String key);
+    Long objectFreq(String key);
 
-  String migrate(String host, int port, String key, int destinationDB, int timeout);
+    String migrate(String host, int port, String key, int destinationDB, int timeout);
 
-  String migrate(String host, int port, int destinationDB, int timeout, MigrateParams params, String... keys);
+    String migrate(String host, int port, int destinationDB, int timeout, MigrateParams params, String... keys);
 
-  String clientKill(String ipPort);
+    String clientKill(String ipPort);
 
-  String clientKill(String ip, int port);
+    String clientKill(String ip, int port);
 
-  Long clientKill(ClientKillParams params);
+    Long clientKill(ClientKillParams params);
 
-  String clientGetname();
+    String clientGetname();
 
-  String clientList();
+    String clientList();
 
-  String clientSetname(String name);
+    String clientSetname(String name);
 
-  String memoryDoctor();
+    String memoryDoctor();
 
-  String aclWhoAmI();
+    String aclWhoAmI();
 
-  String aclGenPass();
+    String aclGenPass();
 
-  List<String> aclList();
+    List<String> aclList();
 
-  List<String> aclUsers();
+    List<String> aclUsers();
 
-  AccessControlUser aclGetUser(String name);
+    AccessControlUser aclGetUser(String name);
 
-  String aclSetUser(String name);
+    String aclSetUser(String name);
 
-  String aclSetUser(String name, String... keys);
+    String aclSetUser(String name, String... keys);
 
-  Long aclDelUser(String name);
+    Long aclDelUser(String name);
 
-  List<String> aclCat();
+    List<String> aclCat();
 
-  List<String> aclCat(String category);
+    List<String> aclCat(String category);
 
-  // TODO: Implements ACL LOAD/SAVE commands
+    // TODO: Implements ACL LOAD/SAVE commands
 }

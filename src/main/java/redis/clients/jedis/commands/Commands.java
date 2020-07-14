@@ -1,414 +1,407 @@
 package redis.clients.jedis.commands;
 
+import redis.clients.jedis.*;
+import redis.clients.jedis.params.*;
+
 import java.util.Map;
 import java.util.Map.Entry;
 
-import redis.clients.jedis.BitOP;
-import redis.clients.jedis.StreamConsumersInfo;
-import redis.clients.jedis.StreamEntryID;
-import redis.clients.jedis.ListPosition;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.SortingParams;
-import redis.clients.jedis.StreamGroupInfo;
-import redis.clients.jedis.StreamInfo;
-import redis.clients.jedis.ZParams;
-import redis.clients.jedis.params.MigrateParams;
-import redis.clients.jedis.params.ClientKillParams;
-import redis.clients.jedis.params.SetParams;
-import redis.clients.jedis.params.ZAddParams;
-import redis.clients.jedis.params.ZIncrByParams;
-
 public interface Commands {
 
-  void ping(String message);
-  
-  void set(String key, String value);
+    void ping(String message);
 
-  void set(String key, String value, SetParams params);
+    void set(String key, String value);
 
-  void get(String key);
+    void set(String key, String value, SetParams params);
 
-  void exists(String... keys);
+    void get(String key);
 
-  void del(String... keys);
+    void exists(String... keys);
 
-  void unlink(String... keys);
+    void del(String... keys);
 
-  void type(String key);
+    void unlink(String... keys);
 
-  void keys(String pattern);
+    void type(String key);
 
-  void rename(String oldkey, String newkey);
+    void keys(String pattern);
 
-  void renamenx(String oldkey, String newkey);
+    void rename(String oldkey, String newkey);
 
-  void expire(String key, int seconds);
+    void renamenx(String oldkey, String newkey);
 
-  void expireAt(String key, long unixTime);
+    void expire(String key, int seconds);
 
-  void ttl(String key);
+    void expireAt(String key, long unixTime);
 
-  void pttl(String key);
+    void ttl(String key);
 
-  void touch(String... keys);
+    void pttl(String key);
 
-  void setbit(String key, long offset, boolean value);
+    void touch(String... keys);
 
-  void setbit(String key, long offset, String value);
+    void setbit(String key, long offset, boolean value);
 
-  void getbit(String key, long offset);
+    void setbit(String key, long offset, String value);
 
-  void setrange(String key, long offset, String value);
+    void getbit(String key, long offset);
 
-  void getrange(String key, long startOffset, long endOffset);
+    void setrange(String key, long offset, String value);
 
-  void move(String key, int dbIndex);
+    void getrange(String key, long startOffset, long endOffset);
 
-  void getSet(String key, String value);
+    void move(String key, int dbIndex);
 
-  void mget(String... keys);
+    void getSet(String key, String value);
 
-  void setnx(String key, String value);
+    void mget(String... keys);
 
-  void setex(String key, int seconds, String value);
+    void setnx(String key, String value);
 
-  void mset(String... keysvalues);
+    void setex(String key, int seconds, String value);
 
-  void msetnx(String... keysvalues);
+    void mset(String... keysvalues);
 
-  void decrBy(String key, long decrement);
+    void msetnx(String... keysvalues);
 
-  void decr(String key);
+    void decrBy(String key, long decrement);
 
-  void incrBy(String key, long increment);
+    void decr(String key);
 
-  void incrByFloat(String key, double increment);
+    void incrBy(String key, long increment);
 
-  void incr(String key);
+    void incrByFloat(String key, double increment);
 
-  void append(String key, String value);
+    void incr(String key);
 
-  void substr(String key, int start, int end);
+    void append(String key, String value);
 
-  void hset(String key, String field, String value);
+    void substr(String key, int start, int end);
 
-  void hget(String key, String field);
+    void hset(String key, String field, String value);
 
-  void hset(String key, Map<String, String> hash);
+    void hget(String key, String field);
 
-  void hsetnx(String key, String field, String value);
+    void hset(String key, Map<String, String> hash);
 
-  void hmset(String key, Map<String, String> hash);
+    void hsetnx(String key, String field, String value);
 
-  void hmget(String key, String... fields);
+    void hmset(String key, Map<String, String> hash);
 
-  void hincrBy(String key, String field, long value);
+    void hmget(String key, String... fields);
 
-  void hincrByFloat(String key, String field, double value);
+    void hincrBy(String key, String field, long value);
 
-  void hexists(String key, String field);
+    void hincrByFloat(String key, String field, double value);
 
-  void hdel(String key, String... fields);
+    void hexists(String key, String field);
 
-  void hlen(String key);
+    void hdel(String key, String... fields);
 
-  void hkeys(String key);
+    void hlen(String key);
 
-  void hvals(String key);
+    void hkeys(String key);
 
-  void hgetAll(String key);
+    void hvals(String key);
 
-  void rpush(String key, String... strings);
+    void hgetAll(String key);
 
-  void lpush(String key, String... strings);
+    void rpush(String key, String... strings);
 
-  void llen(String key);
+    void lpush(String key, String... strings);
 
-  void lrange(String key, long start, long stop);
+    void llen(String key);
 
-  void ltrim(String key, long start, long stop);
+    void lrange(String key, long start, long stop);
 
-  void lindex(String key, long index);
+    void ltrim(String key, long start, long stop);
 
-  void lset(String key, long index, String value);
+    void lindex(String key, long index);
 
-  void lrem(String key, long count, String value);
+    void lset(String key, long index, String value);
 
-  void lpop(String key);
+    void lrem(String key, long count, String value);
 
-  void rpop(String key);
+    void lpop(String key);
 
-  void rpoplpush(String srckey, String dstkey);
+    void rpop(String key);
 
-  void sadd(String key, String... members);
+    void rpoplpush(String srckey, String dstkey);
 
-  void smembers(String key);
+    void sadd(String key, String... members);
 
-  void srem(String key, String... member);
+    void smembers(String key);
 
-  void spop(String key);
+    void srem(String key, String... member);
 
-  void spop(String key, long count);
+    void spop(String key);
 
-  void smove(String srckey, String dstkey, String member);
+    void spop(String key, long count);
 
-  void scard(String key);
+    void smove(String srckey, String dstkey, String member);
 
-  void sismember(String key, String member);
+    void scard(String key);
 
-  void sinter(String... keys);
+    void sismember(String key, String member);
 
-  void sinterstore(String dstkey, String... keys);
+    void sinter(String... keys);
 
-  void sunion(String... keys);
+    void sinterstore(String dstkey, String... keys);
 
-  void sunionstore(String dstkey, String... keys);
+    void sunion(String... keys);
 
-  void sdiff(String... keys);
+    void sunionstore(String dstkey, String... keys);
 
-  void sdiffstore(String dstkey, String... keys);
+    void sdiff(String... keys);
 
-  void srandmember(String key);
+    void sdiffstore(String dstkey, String... keys);
 
-  void zadd(String key, double score, String member);
+    void srandmember(String key);
 
-  void zadd(String key, double score, String member, ZAddParams params);
+    void zadd(String key, double score, String member);
 
-  void zadd(String key, Map<String, Double> scoreMembers);
+    void zadd(String key, double score, String member, ZAddParams params);
 
-  void zadd(String key, Map<String, Double> scoreMembers, ZAddParams params);
+    void zadd(String key, Map<String, Double> scoreMembers);
 
-  void zrange(String key, long start, long stop);
+    void zadd(String key, Map<String, Double> scoreMembers, ZAddParams params);
 
-  void zrem(String key, String... members);
+    void zrange(String key, long start, long stop);
 
-  void zincrby(String key, double increment, String member);
+    void zrem(String key, String... members);
 
-  void zincrby(String key, double increment, String member, ZIncrByParams params);
+    void zincrby(String key, double increment, String member);
 
-  void zrank(String key, String member);
+    void zincrby(String key, double increment, String member, ZIncrByParams params);
 
-  void zrevrank(String key, String member);
+    void zrank(String key, String member);
 
-  void zrevrange(String key, long start, long stop);
+    void zrevrank(String key, String member);
 
-  void zrangeWithScores(String key, long start, long stop);
+    void zrevrange(String key, long start, long stop);
 
-  void zrevrangeWithScores(String key, long start, long stop);
+    void zrangeWithScores(String key, long start, long stop);
 
-  void zcard(String key);
+    void zrevrangeWithScores(String key, long start, long stop);
 
-  void zscore(String key, String member);
-  
-  void zpopmax(String key);
-  
-  void zpopmax(String key, int count);
+    void zcard(String key);
 
-  void zpopmin(String key);
+    void zscore(String key, String member);
 
-  void zpopmin(String key, long count);
+    void zpopmax(String key);
 
-  void watch(String... keys);
+    void zpopmax(String key, int count);
 
-  void sort(String key);
+    void zpopmin(String key);
 
-  void sort(String key, SortingParams sortingParameters);
+    void zpopmin(String key, long count);
 
-  void blpop(String[] args);
+    void watch(String... keys);
 
-  void sort(String key, SortingParams sortingParameters, String dstkey);
+    void sort(String key);
 
-  void sort(String key, String dstkey);
+    void sort(String key, SortingParams sortingParameters);
 
-  void brpop(String[] args);
+    void blpop(String[] args);
 
-  void brpoplpush(String source, String destination, int timeout);
+    void sort(String key, SortingParams sortingParameters, String dstkey);
 
-  void zcount(String key, double min, double max);
+    void sort(String key, String dstkey);
 
-  void zcount(String key, String min, String max);
+    void brpop(String[] args);
 
-  void zrangeByScore(String key, double min, double max);
+    void brpoplpush(String source, String destination, int timeout);
 
-  void zrangeByScore(String key, String min, String max);
+    void zcount(String key, double min, double max);
 
-  void zrangeByScore(String key, double min, double max, int offset,
-      int count);
+    void zcount(String key, String min, String max);
 
-  void zrangeByScore(String key, String min, String max, int offset, int count);
+    void zrangeByScore(String key, double min, double max);
 
-  void zrangeByScoreWithScores(String key, double min, double max);
+    void zrangeByScore(String key, String min, String max);
 
-  void zrangeByScoreWithScores(String key, double min, double max,
-      int offset, int count);
+    void zrangeByScore(String key, double min, double max, int offset,
+                       int count);
 
-  void zrangeByScoreWithScores(String key, String min, String max);
+    void zrangeByScore(String key, String min, String max, int offset, int count);
 
-  void zrangeByScoreWithScores(String key, String min, String max,
-      int offset, int count);
+    void zrangeByScoreWithScores(String key, double min, double max);
 
-  void zrevrangeByScore(String key, double max, double min);
+    void zrangeByScoreWithScores(String key, double min, double max,
+                                 int offset, int count);
 
-  void zrevrangeByScore(String key, String max, String min);
+    void zrangeByScoreWithScores(String key, String min, String max);
 
-  void zrevrangeByScore(String key, double max, double min, int offset,
-      int count);
+    void zrangeByScoreWithScores(String key, String min, String max,
+                                 int offset, int count);
 
-  void zrevrangeByScore(String key, String max, String min, int offset, int count);
+    void zrevrangeByScore(String key, double max, double min);
 
-  void zrevrangeByScoreWithScores(String key, double max, double min);
+    void zrevrangeByScore(String key, String max, String min);
 
-  void zrevrangeByScoreWithScores(String key, double max, double min,
-      int offset, int count);
+    void zrevrangeByScore(String key, double max, double min, int offset,
+                          int count);
 
-  void zrevrangeByScoreWithScores(String key, String max, String min);
+    void zrevrangeByScore(String key, String max, String min, int offset, int count);
 
-  void zrevrangeByScoreWithScores(String key, String max, String min,
-      int offset, int count);
+    void zrevrangeByScoreWithScores(String key, double max, double min);
 
-  void zremrangeByRank(String key, long start, long stop);
+    void zrevrangeByScoreWithScores(String key, double max, double min,
+                                    int offset, int count);
 
-  void zremrangeByScore(String key, double min, double max);
+    void zrevrangeByScoreWithScores(String key, String max, String min);
 
-  void zremrangeByScore(String key, String min, String max);
+    void zrevrangeByScoreWithScores(String key, String max, String min,
+                                    int offset, int count);
 
-  void zunionstore(String dstkey, String... sets);
+    void zremrangeByRank(String key, long start, long stop);
 
-  void zunionstore(String dstkey, ZParams params, String... sets);
+    void zremrangeByScore(String key, double min, double max);
 
-  void zinterstore(String dstkey, String... sets);
+    void zremrangeByScore(String key, String min, String max);
 
-  void zinterstore(String dstkey, ZParams params, String... sets);
+    void zunionstore(String dstkey, String... sets);
 
-  void strlen(String key);
+    void zunionstore(String dstkey, ZParams params, String... sets);
 
-  void lpushx(String key, String... string);
+    void zinterstore(String dstkey, String... sets);
 
-  void persist(String key);
+    void zinterstore(String dstkey, ZParams params, String... sets);
 
-  void rpushx(String key, String... string);
+    void strlen(String key);
 
-  void echo(String string);
+    void lpushx(String key, String... string);
 
-  void linsert(String key, ListPosition where, String pivot, String value);
+    void persist(String key);
 
-  void bgrewriteaof();
+    void rpushx(String key, String... string);
 
-  void bgsave();
+    void echo(String string);
 
-  void lastsave();
+    void linsert(String key, ListPosition where, String pivot, String value);
 
-  void save();
+    void bgrewriteaof();
 
-  void configSet(String parameter, String value);
+    void bgsave();
 
-  void configGet(String pattern);
+    void lastsave();
 
-  void configResetStat();
+    void save();
 
-  void multi();
+    void configSet(String parameter, String value);
 
-  void exec();
+    void configGet(String pattern);
 
-  void discard();
+    void configResetStat();
 
-  void objectRefcount(String key);
+    void multi();
 
-  void objectIdletime(String key);
+    void exec();
 
-  void objectEncoding(String key);
+    void discard();
 
-  void objectHelp();
+    void objectRefcount(String key);
 
-  void objectFreq(String key);
+    void objectIdletime(String key);
 
-  void bitcount(String key);
+    void objectEncoding(String key);
 
-  void bitcount(String key, long start, long end);
+    void objectHelp();
 
-  void bitop(BitOP op, String destKey, String... srcKeys);
+    void objectFreq(String key);
 
-  void dump(String key);
+    void bitcount(String key);
 
-  void restore(String key, int ttl, byte[] serializedValue);
+    void bitcount(String key, long start, long end);
 
-  void restoreReplace(String key, int ttl, byte[] serializedValue);
+    void bitop(BitOP op, String destKey, String... srcKeys);
 
-  void scan(String cursor, ScanParams params);
+    void dump(String key);
 
-  void hscan(String key, String cursor, ScanParams params);
+    void restore(String key, int ttl, byte[] serializedValue);
 
-  void sscan(String key, String cursor, ScanParams params);
+    void restoreReplace(String key, int ttl, byte[] serializedValue);
 
-  void zscan(String key, String cursor, ScanParams params);
+    void scan(String cursor, ScanParams params);
 
-  void waitReplicas(int replicas, long timeout);
+    void hscan(String key, String cursor, ScanParams params);
 
-  /**
-   * Used for BITFIELD Redis command
-   * @param key
-   * @param arguments
-   */
-  void bitfield(String key, String... arguments);
+    void sscan(String key, String cursor, ScanParams params);
 
-  void bitfieldReadonly(String key, String... arguments);
+    void zscan(String key, String cursor, ScanParams params);
 
-  /**
-   * Used for HSTRLEN Redis command
-   * @param key
-   * @param field
-   */
-  void hstrlen(String key, String field);
+    void waitReplicas(int replicas, long timeout);
 
-  void migrate(String host, int port, String key, int destinationDB, int timeout);
+    /**
+     * Used for BITFIELD Redis command
+     *
+     * @param key
+     * @param arguments
+     */
+    void bitfield(String key, String... arguments);
 
-  void migrate(String host, int port, int destinationDB, int timeout, MigrateParams params, String... keys);
+    void bitfieldReadonly(String key, String... arguments);
 
-  void clientKill(String ipPort);
+    /**
+     * Used for HSTRLEN Redis command
+     *
+     * @param key
+     * @param field
+     */
+    void hstrlen(String key, String field);
 
-  void clientKill(String ip, int port);
+    void migrate(String host, int port, String key, int destinationDB, int timeout);
 
-  void clientKill(ClientKillParams params);
+    void migrate(String host, int port, int destinationDB, int timeout, MigrateParams params, String... keys);
 
-  void clientGetname();
+    void clientKill(String ipPort);
 
-  void clientList();
+    void clientKill(String ip, int port);
 
-  void clientSetname(String name);
+    void clientKill(ClientKillParams params);
 
-  void memoryDoctor();
+    void clientGetname();
 
-  void xadd(String key, StreamEntryID id, Map<String, String> hash, long maxLen, boolean approximateLength);
-  
-  void xlen(String key);
+    void clientList();
 
-  void xrange(String key, StreamEntryID start, StreamEntryID end, long count);
-  
-  void xrevrange(String key, StreamEntryID end, StreamEntryID start, int count);
-  
-  void xread(int count, long block, Entry<String, StreamEntryID>... streams);
-  
-  void xack(String key, String group, StreamEntryID... ids);
-  
-  void xgroupCreate(String key, String consumer, StreamEntryID id, boolean makeStream);
+    void clientSetname(String name);
 
-  void xgroupSetID(String key, String consumer, StreamEntryID id);
+    void memoryDoctor();
 
-  void xgroupDestroy(String key, String consumer);
+    void xadd(String key, StreamEntryID id, Map<String, String> hash, long maxLen, boolean approximateLength);
 
-  void xgroupDelConsumer(String key, String consumer, String consumerName);
+    void xlen(String key);
 
-  void xdel(String key, StreamEntryID... ids);
+    void xrange(String key, StreamEntryID start, StreamEntryID end, long count);
 
-  void xtrim(String key, long maxLen, boolean approximateLength);
+    void xrevrange(String key, StreamEntryID end, StreamEntryID start, int count);
 
-  void xreadGroup(String groupname, String consumer, int count, long block, boolean noAck, Entry<String, StreamEntryID>... streams);
+    void xread(int count, long block, Entry<String, StreamEntryID>... streams);
 
-  void xpending(String key, String groupname, StreamEntryID start, StreamEntryID end, int count, String consumername);
+    void xack(String key, String group, StreamEntryID... ids);
 
-  void xclaim(String key, String group, String consumername, long minIdleTime, long newIdleTime, int retries,
-      boolean force, StreamEntryID... ids);
-  void xinfoStream (String key);
-  void xinfoGroup (String key);
-  void xinfoConsumers (String key, String group);
+    void xgroupCreate(String key, String consumer, StreamEntryID id, boolean makeStream);
+
+    void xgroupSetID(String key, String consumer, StreamEntryID id);
+
+    void xgroupDestroy(String key, String consumer);
+
+    void xgroupDelConsumer(String key, String consumer, String consumerName);
+
+    void xdel(String key, StreamEntryID... ids);
+
+    void xtrim(String key, long maxLen, boolean approximateLength);
+
+    void xreadGroup(String groupname, String consumer, int count, long block, boolean noAck, Entry<String, StreamEntryID>... streams);
+
+    void xpending(String key, String groupname, StreamEntryID start, StreamEntryID end, int count, String consumername);
+
+    void xclaim(String key, String group, String consumername, long minIdleTime, long newIdleTime, int retries,
+                boolean force, StreamEntryID... ids);
+
+    void xinfoStream(String key);
+
+    void xinfoGroup(String key);
+
+    void xinfoConsumers(String key, String group);
 }
