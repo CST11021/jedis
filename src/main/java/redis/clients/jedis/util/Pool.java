@@ -1,191 +1,226 @@
 package redis.clients.jedis.util;
 
-import java.io.Closeable;
-import java.util.NoSuchElementException;
-
 import org.apache.commons.pool2.PooledObjectFactory;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisException;
 import redis.clients.jedis.exceptions.JedisExhaustedPoolException;
 
+import java.io.Closeable;
+import java.util.NoSuchElementException;
+
 public abstract class Pool<T> implements Closeable {
-  protected GenericObjectPool<T> internalPool;
 
-  /**
-   * Using this constructor means you have to set and initialize the internalPool yourself.
-   */
-  public Pool() {
-  }
+    /**
+     * 使用的时候需要调用 borrowObject 获取一个对象，使用完以后需要调用 returnObject 归还对象，或者调用 invalidateObject 将这个对象标记为不可再用
+     */
+    protected GenericObjectPool<T> internalPool;
 
-  public Pool(final GenericObjectPoolConfig poolConfig, PooledObjectFactory<T> factory) {
-    initPool(poolConfig, factory);
-  }
+    /**
+     * Using this constructor means you have to set and initialize the internalPool yourself.
+     */
+    public Pool() {
+    }
 
-  @Override
-  public void close() {
-    destroy();
-  }
+    public Pool(final GenericObjectPoolConfig poolConfig, PooledObjectFactory<T> factory) {
+        initPool(poolConfig, factory);
+    }
 
-  public boolean isClosed() {
-    return this.internalPool.isClosed();
-  }
+    /**
+     * 初始化对象池
+     *
+     * @param poolConfig 对象池配置
+     * @param factory    创建对象的工厂
+     */
+    public void initPool(final GenericObjectPoolConfig poolConfig, PooledObjectFactory<T> factory) {
 
-  public void initPool(final GenericObjectPoolConfig poolConfig, PooledObjectFactory<T> factory) {
+        if (this.internalPool != null) {
+            try {
+                closeInternalPool();
+            } catch (Exception e) {
+            }
+        }
 
-    if (this.internalPool != null) {
-      try {
+        this.internalPool = new GenericObjectPool<>(factory, poolConfig);
+    }
+
+
+    // 获取、归还和标记对象为不可用
+
+    /**
+     * 添加相应数量的对象到池里
+     *
+     * @param count
+     */
+    public void addObjects(int count) {
+        try {
+            for (int i = 0; i < count; i++) {
+                this.internalPool.addObject();
+            }
+        } catch (Exception e) {
+            throw new JedisException("Error trying to add idle objects", e);
+        }
+    }
+
+    /**
+     * 从对象池获取一个对象
+     *
+     * @return
+     */
+    public T getResource() {
+        try {
+            // 从对象池获取一个对象
+            return internalPool.borrowObject();
+        } catch (NoSuchElementException nse) {
+            // The exception was caused by an exhausted pool
+            if (null == nse.getCause()) {
+                throw new JedisExhaustedPoolException("Could not get a resource since the pool is exhausted", nse);
+            }
+            // Otherwise, the exception was caused by the implemented activateObject() or ValidateObject()
+            throw new JedisException("Could not get a resource from the pool", nse);
+        } catch (Exception e) {
+            throw new JedisConnectionException("Could not get a resource from the pool", e);
+        }
+    }
+
+    /**
+     * 归还对象
+     *
+     * @param resource
+     */
+    protected void returnResourceObject(final T resource) {
+        if (resource == null) {
+            return;
+        }
+
+        try {
+            internalPool.returnObject(resource);
+        } catch (Exception e) {
+            throw new JedisException("Could not return the resource to the pool", e);
+        }
+    }
+
+    protected void returnResource(final T resource) {
+        if (resource != null) {
+            returnResourceObject(resource);
+        }
+    }
+
+    /**
+     * 标记对象为不可用
+     *
+     * @param resource
+     */
+    protected void returnBrokenResource(final T resource) {
+        if (resource != null) {
+            returnBrokenResourceObject(resource);
+        }
+    }
+
+    protected void returnBrokenResourceObject(final T resource) {
+        try {
+            internalPool.invalidateObject(resource);
+        } catch (Exception e) {
+            throw new JedisException("Could not return the broken resource to the pool", e);
+        }
+    }
+
+
+    /**
+     * 返回当前从该池借用的实例数
+     *
+     * @return 当前从该池借用的实例数，如果该池处于非活动状态，则为-1
+     */
+    public int getNumActive() {
+        if (poolInactive()) {
+            return -1;
+        }
+
+        return this.internalPool.getNumActive();
+    }
+
+    /**
+     * 返回此池中当前空闲的实例数
+     *
+     * @return 当前在该池中空闲的实例数，如果该池处于非活动状态，则为-1
+     */
+    public int getNumIdle() {
+        if (poolInactive()) {
+            return -1;
+        }
+
+        return this.internalPool.getNumIdle();
+    }
+
+    /**
+     * 返回当前等待该池中的资源被阻止的线程数的估计值
+     *
+     * @return 等待中的线程数，如果池处于非活动状态，则为-1
+     */
+    public int getNumWaiters() {
+        if (poolInactive()) {
+            return -1;
+        }
+
+        return this.internalPool.getNumWaiters();
+    }
+
+    /**
+     * 返回线程从该池获取资源所花费的平均等待时间
+     *
+     * @return 如果池处于非活动状态，则平均等待时间（以毫秒为单位）为-1
+     */
+    public long getMeanBorrowWaitTimeMillis() {
+        if (poolInactive()) {
+            return -1;
+        }
+
+        return this.internalPool.getMeanBorrowWaitTimeMillis();
+    }
+
+    /**
+     * 返回线程从该池获取资源所花费的最大等待时间（就是从池里获取对象，如果池里的对象不够以一直等待，如果等了一段时间是没有就不等了）
+     *
+     * @return 如果池处于非活动状态，则最大等待时间（以毫秒为单位）为-1
+     */
+    public long getMaxBorrowWaitTimeMillis() {
+        if (poolInactive()) {
+            return -1;
+        }
+
+        return this.internalPool.getMaxBorrowWaitTimeMillis();
+    }
+
+    /**
+     * 判断对象池是否被关闭
+     *
+     * @return
+     */
+    private boolean poolInactive() {
+        return this.internalPool == null || this.internalPool.isClosed();
+    }
+
+
+    @Override
+    public void close() {
+        destroy();
+    }
+
+    public boolean isClosed() {
+        return this.internalPool.isClosed();
+    }
+
+    public void destroy() {
         closeInternalPool();
-      } catch (Exception e) {
-      }
     }
 
-    this.internalPool = new GenericObjectPool<>(factory, poolConfig);
-  }
-
-  public T getResource() {
-    try {
-      return internalPool.borrowObject();
-    } catch (NoSuchElementException nse) {
-      if (null == nse.getCause()) { // The exception was caused by an exhausted pool
-        throw new JedisExhaustedPoolException(
-            "Could not get a resource since the pool is exhausted", nse);
-      }
-      // Otherwise, the exception was caused by the implemented activateObject() or ValidateObject()
-      throw new JedisException("Could not get a resource from the pool", nse);
-    } catch (Exception e) {
-      throw new JedisConnectionException("Could not get a resource from the pool", e);
-    }
-  }
-
-  protected void returnResourceObject(final T resource) {
-    if (resource == null) {
-      return;
-    }
-    try {
-      internalPool.returnObject(resource);
-    } catch (Exception e) {
-      throw new JedisException("Could not return the resource to the pool", e);
-    }
-  }
-
-  protected void returnBrokenResource(final T resource) {
-    if (resource != null) {
-      returnBrokenResourceObject(resource);
-    }
-  }
-
-  protected void returnResource(final T resource) {
-    if (resource != null) {
-      returnResourceObject(resource);
-    }
-  }
-
-  public void destroy() {
-    closeInternalPool();
-  }
-
-  protected void returnBrokenResourceObject(final T resource) {
-    try {
-      internalPool.invalidateObject(resource);
-    } catch (Exception e) {
-      throw new JedisException("Could not return the broken resource to the pool", e);
-    }
-  }
-
-  protected void closeInternalPool() {
-    try {
-      internalPool.close();
-    } catch (Exception e) {
-      throw new JedisException("Could not destroy the pool", e);
-    }
-  }
-  
-  /**
-   * Returns the number of instances currently borrowed from this pool.
-   *
-   * @return The number of instances currently borrowed from this pool, -1 if
-   * the pool is inactive.
-   */
-  public int getNumActive() {
-    if (poolInactive()) {
-      return -1;
+    protected void closeInternalPool() {
+        try {
+            internalPool.close();
+        } catch (Exception e) {
+            throw new JedisException("Could not destroy the pool", e);
+        }
     }
 
-    return this.internalPool.getNumActive();
-  }
-  
-  /**
-   * Returns the number of instances currently idle in this pool.
-   *
-   * @return The number of instances currently idle in this pool, -1 if the
-   * pool is inactive.
-   */
-  public int getNumIdle() {
-    if (poolInactive()) {
-      return -1;
-    }
-
-    return this.internalPool.getNumIdle();
-  }
-  
-  /**
-   * Returns an estimate of the number of threads currently blocked waiting for
-   * a resource from this pool.
-   *
-   * @return The number of threads waiting, -1 if the pool is inactive.
-   */
-  public int getNumWaiters() {
-    if (poolInactive()) {
-      return -1;
-    }
-
-    return this.internalPool.getNumWaiters();
-  }
-  
-  /**
-   * Returns the mean waiting time spent by threads to obtain a resource from
-   * this pool.
-   *
-   * @return The mean waiting time, in milliseconds, -1 if the pool is
-   * inactive.
-   */
-  public long getMeanBorrowWaitTimeMillis() {
-    if (poolInactive()) {
-      return -1;
-    }
-
-    return this.internalPool.getMeanBorrowWaitTimeMillis();
-  }
-  
-  /**
-   * Returns the maximum waiting time spent by threads to obtain a resource
-   * from this pool.
-   *
-   * @return The maximum waiting time, in milliseconds, -1 if the pool is
-   * inactive.
-   */
-  public long getMaxBorrowWaitTimeMillis() {
-    if (poolInactive()) {
-      return -1;
-    }
-
-    return this.internalPool.getMaxBorrowWaitTimeMillis();
-  }
-
-  private boolean poolInactive() {
-    return this.internalPool == null || this.internalPool.isClosed();
-  }
-
-  public void addObjects(int count) {
-    try {
-      for (int i = 0; i < count; i++) {
-        this.internalPool.addObject();
-      }
-    } catch (Exception e) {
-      throw new JedisException("Error trying to add idle objects", e);
-    }
-  }
 }

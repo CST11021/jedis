@@ -18,8 +18,8 @@ import java.util.*;
 
 import static redis.clients.jedis.Protocol.toByteArray;
 
-public class BinaryJedis implements BasicCommands, BinaryJedisCommands, MultiKeyBinaryCommands,
-        AdvancedBinaryJedisCommands, BinaryScriptingCommands, Closeable {
+public class BinaryJedis implements BasicCommands, BinaryJedisCommands, MultiKeyBinaryCommands, AdvancedBinaryJedisCommands, BinaryScriptingCommands, Closeable {
+
     protected Client client = null;
     protected Transaction transaction = null;
     protected Pipeline pipeline = null;
@@ -30,6 +30,7 @@ public class BinaryJedis implements BasicCommands, BinaryJedisCommands, MultiKey
     }
     public BinaryJedis(final String host) {
         URI uri = URI.create(host);
+        // 如果是有效的URI，则使用initializeClientFromURI初始化客户端
         if (JedisURIHelper.isValid(uri)) {
             initializeClientFromURI(uri);
         } else {
@@ -111,7 +112,6 @@ public class BinaryJedis implements BasicCommands, BinaryJedisCommands, MultiKey
     private void initializeClientFromURI(URI uri) {
         initializeClientFromURI(uri, null, null, null);
     }
-
     private void initializeClientFromURI(URI uri, final SSLSocketFactory sslSocketFactory, final SSLParameters sslParameters, final HostnameVerifier hostnameVerifier) {
         if (!JedisURIHelper.isValid(uri)) {
             throw new InvalidURIException(String.format(
@@ -139,6 +139,14 @@ public class BinaryJedis implements BasicCommands, BinaryJedisCommands, MultiKey
             client.setDb(dbIndex);
         }
     }
+
+
+
+
+
+
+
+
 
     @Override
     public String ping() {
@@ -1918,13 +1926,15 @@ public class BinaryJedis implements BasicCommands, BinaryJedisCommands, MultiKey
         return transaction;
     }
 
+    /**
+     * 进行事务检查和批处理命令检查：Jedis不能进行有事务的操作，带事务的连接要用redis.clients.jedis.Transaction类
+     */
     protected void checkIsInMultiOrPipeline() {
+        // 如果是事务操作，则直接报错
         if (client.isInMulti()) {
-            throw new JedisDataException(
-                    "Cannot use Jedis when in Multi. Please use Transaction or reset jedis state.");
+            throw new JedisDataException("Cannot use Jedis when in Multi. Please use Transaction or reset jedis state.");
         } else if (pipeline != null && pipeline.hasPipelinedResponse()) {
-            throw new JedisDataException(
-                    "Cannot use Jedis when in Pipeline. Please use Pipeline or reset jedis state .");
+            throw new JedisDataException("Cannot use Jedis when in Pipeline. Please use Pipeline or reset jedis state .");
         }
     }
 

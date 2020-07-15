@@ -12,113 +12,124 @@ import java.net.Socket;
 
 public class DefaultJedisSocketFactory implements JedisSocketFactory {
 
-  private String host;
-  private int port;
-  private int connectionTimeout;
-  private int soTimeout;
-  private boolean ssl;
-  private SSLSocketFactory sslSocketFactory;
-  private SSLParameters sslParameters;
-  private HostnameVerifier hostnameVerifier;
+    private String host;
+    private int port;
+    private int connectionTimeout;
+    private int soTimeout;
+    private boolean ssl;
+    private SSLSocketFactory sslSocketFactory;
+    private SSLParameters sslParameters;
+    private HostnameVerifier hostnameVerifier;
 
-  public DefaultJedisSocketFactory(String host, int port, int connectionTimeout, int soTimeout,
-      boolean ssl, SSLSocketFactory sslSocketFactory, SSLParameters sslParameters,
-      HostnameVerifier hostnameVerifier) {
-    this.host = host;
-    this.port = port;
-    this.connectionTimeout = connectionTimeout;
-    this.soTimeout = soTimeout;
-    this.ssl = ssl;
-    this.sslSocketFactory = sslSocketFactory;
-    this.sslParameters = sslParameters;
-    this.hostnameVerifier = hostnameVerifier;
-  }
-
-  @Override
-  public Socket createSocket() throws IOException {
-    Socket socket = null;
-    try {
-      socket = new Socket();
-      // ->@wjw_add
-      socket.setReuseAddress(true);
-      socket.setKeepAlive(true); // Will monitor the TCP connection is
-      // valid
-      socket.setTcpNoDelay(true); // Socket buffer Whetherclosed, to
-      // ensure timely delivery of data
-      socket.setSoLinger(true, 0); // Control calls close () method,
-      // the underlying socket is closed
-      // immediately
-      // <-@wjw_add
-
-      socket.connect(new InetSocketAddress(getHost(), getPort()), getConnectionTimeout());
-      socket.setSoTimeout(getSoTimeout());
-
-      if (ssl) {
-        if (null == sslSocketFactory) {
-          sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-        }
-        socket = sslSocketFactory.createSocket(socket, getHost(), getPort(), true);
-        if (null != sslParameters) {
-          ((SSLSocket) socket).setSSLParameters(sslParameters);
-        }
-        if ((null != hostnameVerifier)
-            && (!hostnameVerifier.verify(getHost(), ((SSLSocket) socket).getSession()))) {
-          String message = String.format(
-            "The connection to '%s' failed ssl/tls hostname verification.", getHost());
-          throw new JedisConnectionException(message);
-        }
-      }
-      return socket;
-    } catch (Exception ex) {
-      if (socket != null) {
-        socket.close();
-      }
-      throw ex;
+    /**
+     *
+     *
+     * @param host                  redis服务端host
+     * @param port                  redis服务端端口
+     * @param connectionTimeout     连接超时时间
+     * @param soTimeout
+     * @param ssl
+     * @param sslSocketFactory
+     * @param sslParameters
+     * @param hostnameVerifier
+     */
+    public DefaultJedisSocketFactory(String host, int port, int connectionTimeout, int soTimeout,
+                                     boolean ssl, SSLSocketFactory sslSocketFactory, SSLParameters sslParameters,
+                                     HostnameVerifier hostnameVerifier) {
+        this.host = host;
+        this.port = port;
+        this.connectionTimeout = connectionTimeout;
+        this.soTimeout = soTimeout;
+        this.ssl = ssl;
+        this.sslSocketFactory = sslSocketFactory;
+        this.sslParameters = sslParameters;
+        this.hostnameVerifier = hostnameVerifier;
     }
-  }
 
-  @Override
-  public String getDescription() {
-    return host + ":" + port;
-  }
+    @Override
+    public Socket createSocket() throws IOException {
+        Socket socket = null;
+        try {
+            socket = new Socket();
+            // ->@wjw_add
+            socket.setReuseAddress(true);
+            // Will monitor the TCP connection is
+            socket.setKeepAlive(true);
+            // valid
+            // Socket buffer Whetherclosed, to
+            socket.setTcpNoDelay(true);
+            // ensure timely delivery of data
+            // Control calls close () method,
+            socket.setSoLinger(true, 0);
+            // the underlying socket is closed
+            // immediately
+            // <-@wjw_add
 
-  @Override
-  public String getHost() {
-    return host;
-  }
+            socket.connect(new InetSocketAddress(getHost(), getPort()), getConnectionTimeout());
+            socket.setSoTimeout(getSoTimeout());
 
-  @Override
-  public void setHost(String host) {
-    this.host = host;
-  }
+            if (ssl) {
+                if (null == sslSocketFactory) {
+                    sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+                }
+                socket = sslSocketFactory.createSocket(socket, getHost(), getPort(), true);
+                if (null != sslParameters) {
+                    ((SSLSocket) socket).setSSLParameters(sslParameters);
+                }
+                if ((null != hostnameVerifier)
+                        && (!hostnameVerifier.verify(getHost(), ((SSLSocket) socket).getSession()))) {
+                    String message = String.format(
+                            "The connection to '%s' failed ssl/tls hostname verification.", getHost());
+                    throw new JedisConnectionException(message);
+                }
+            }
+            return socket;
+        } catch (Exception ex) {
+            if (socket != null) {
+                socket.close();
+            }
+            throw ex;
+        }
+    }
 
-  @Override
-  public int getPort() {
-    return port;
-  }
+    @Override
+    public String getDescription() {
+        return host + ":" + port;
+    }
 
-  @Override
-  public void setPort(int port) {
-    this.port = port;
-  }
+    @Override
+    public String getHost() {
+        return host;
+    }
+    @Override
+    public void setHost(String host) {
+        this.host = host;
+    }
 
-  @Override
-  public int getConnectionTimeout() {
-    return connectionTimeout;
-  }
+    @Override
+    public int getPort() {
+        return port;
+    }
+    @Override
+    public void setPort(int port) {
+        this.port = port;
+    }
 
-  @Override
-  public void setConnectionTimeout(int connectionTimeout) {
-    this.connectionTimeout = connectionTimeout;
-  }
+    @Override
+    public int getConnectionTimeout() {
+        return connectionTimeout;
+    }
+    @Override
+    public void setConnectionTimeout(int connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
 
-  @Override
-  public int getSoTimeout() {
-    return soTimeout;
-  }
-
-  @Override
-  public void setSoTimeout(int soTimeout) {
-    this.soTimeout = soTimeout;
-  }
+    @Override
+    public int getSoTimeout() {
+        return soTimeout;
+    }
+    @Override
+    public void setSoTimeout(int soTimeout) {
+        this.soTimeout = soTimeout;
+    }
 }

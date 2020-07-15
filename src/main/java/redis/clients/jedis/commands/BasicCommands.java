@@ -2,6 +2,9 @@ package redis.clients.jedis.commands;
 
 import redis.clients.jedis.DebugParams;
 
+/**
+ * 基础命令：用于操作 Redis DB 相关的函数
+ */
 public interface BasicCommands {
 
     /**

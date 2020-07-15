@@ -6,6 +6,13 @@ import java.util.List;
 
 import redis.clients.jedis.exceptions.JedisDataException;
 
+/**
+ * redis是一个cs模式的tcp server，使用和http类似的请求响应协议。一个client可以通过一个socket连接发起多个请求命令。每个请求命令发出后
+ * client通常会阻塞并等待redis服务处理，redis处理完后请求命令后会将结果通过响应报文返回给client。所以在多条命令需要处理时，使用pipeline
+ * 效率会快得多。通过pipeline方式当有大批量的操作时候。我们可以节省很多原来浪费在网络延迟的时间。pipeline方式将client端命令一起发出，
+ * redis server会处理完多条命令后，将结果一起打包返回client,从而节省大量的网络延迟开销。需要注意到是用 pipeline方式打包命令发送，
+ * redis必须在处理完所有命令前先缓存起所有命令的处理结果。打包的命令越多，缓存消耗内存也越多。所以并是不是打包的命令越多越好。具体多少合适需要根据具体情况测试。
+ */
 public class Pipeline extends MultiKeyPipelineBase implements Closeable {
 
   private MultiResponseBuilder currentMulti;
