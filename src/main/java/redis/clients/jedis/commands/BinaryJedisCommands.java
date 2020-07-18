@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Common interface for sharded and non-sharded BinaryJedis
+ * 提供了针对redis数据结构的CURD等操作，其中参数(K-V)必须以byte数组形式提供，分片和非分片BinaryJedis的通用接口
  */
 public interface BinaryJedisCommands {
     String set(byte[] key, byte[] value);

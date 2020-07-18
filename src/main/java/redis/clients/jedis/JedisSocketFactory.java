@@ -27,25 +27,23 @@ public interface JedisSocketFactory {
      */
     String getDescription();
 
+    // host
+
     String getHost();
     void setHost(String host);
+
+    // redis端口
 
     int getPort();
     void setPort(int port);
 
-    /**
-     * 指的是连接一个url的连接等待时间
-     *
-     * @return
-     */
+    // 连接redis的等待超时时间
+
     int getConnectionTimeout();
     void setConnectionTimeout(int connectionTimeout);
 
-    /**
-     * 读取数据超时时间
-     *
-     * @return
-     */
+    // 读取redis response 数据超时时间
+
     int getSoTimeout();
     void setSoTimeout(int soTimeout);
 }

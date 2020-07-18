@@ -62,7 +62,6 @@ public abstract class Pool<T> implements Closeable {
             throw new JedisException("Error trying to add idle objects", e);
         }
     }
-
     /**
      * 从对象池获取一个对象
      *
@@ -83,7 +82,6 @@ public abstract class Pool<T> implements Closeable {
             throw new JedisConnectionException("Could not get a resource from the pool", e);
         }
     }
-
     /**
      * 归还对象
      *
@@ -100,13 +98,16 @@ public abstract class Pool<T> implements Closeable {
             throw new JedisException("Could not return the resource to the pool", e);
         }
     }
-
+    /**
+     * 归还对象
+     *
+     * @param resource
+     */
     protected void returnResource(final T resource) {
         if (resource != null) {
             returnResourceObject(resource);
         }
     }
-
     /**
      * 标记对象为不可用
      *
@@ -117,7 +118,11 @@ public abstract class Pool<T> implements Closeable {
             returnBrokenResourceObject(resource);
         }
     }
-
+    /**
+     * 标记对象为不可用
+     *
+     * @param resource
+     */
     protected void returnBrokenResourceObject(final T resource) {
         try {
             internalPool.invalidateObject(resource);
@@ -126,6 +131,8 @@ public abstract class Pool<T> implements Closeable {
         }
     }
 
+
+    // 返回对象池中的统计信息
 
     /**
      * 返回当前从该池借用的实例数
@@ -139,7 +146,6 @@ public abstract class Pool<T> implements Closeable {
 
         return this.internalPool.getNumActive();
     }
-
     /**
      * 返回此池中当前空闲的实例数
      *
@@ -152,7 +158,6 @@ public abstract class Pool<T> implements Closeable {
 
         return this.internalPool.getNumIdle();
     }
-
     /**
      * 返回当前等待该池中的资源被阻止的线程数的估计值
      *
@@ -165,7 +170,6 @@ public abstract class Pool<T> implements Closeable {
 
         return this.internalPool.getNumWaiters();
     }
-
     /**
      * 返回线程从该池获取资源所花费的平均等待时间
      *
@@ -178,7 +182,6 @@ public abstract class Pool<T> implements Closeable {
 
         return this.internalPool.getMeanBorrowWaitTimeMillis();
     }
-
     /**
      * 返回线程从该池获取资源所花费的最大等待时间（就是从池里获取对象，如果池里的对象不够以一直等待，如果等了一段时间是没有就不等了）
      *
@@ -191,7 +194,6 @@ public abstract class Pool<T> implements Closeable {
 
         return this.internalPool.getMaxBorrowWaitTimeMillis();
     }
-
     /**
      * 判断对象池是否被关闭
      *

@@ -16,7 +16,7 @@ public final class SafeEncoder {
     }
 
     /**
-     * 将字符串转成字节
+     * 将字符串转成字节（使用UTF-8编码）
      *
      * @param strs
      * @return
@@ -30,7 +30,7 @@ public final class SafeEncoder {
     }
 
     /**
-     * 将字符串转成字节
+     * 将字符串转成字节（使用UTF-8编码）
      *
      * @param str
      * @return
@@ -47,7 +47,7 @@ public final class SafeEncoder {
     }
 
     /**
-     * 将字节转为字符串
+     * 将字节转为字符串（使用UTF-8编码）
      *
      * @param data
      * @return

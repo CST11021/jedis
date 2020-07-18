@@ -96,11 +96,17 @@ public interface MultiKeyCommands {
 
     String brpoplpush(String source, String destination, int timeout);
 
+
+
+    // 发布订阅相关接口
+
     Long publish(String channel, String message);
-
     void subscribe(JedisPubSub jedisPubSub, String... channels);
-
     void psubscribe(JedisPubSub jedisPubSub, String... patterns);
+
+
+
+
 
     String randomKey();
 

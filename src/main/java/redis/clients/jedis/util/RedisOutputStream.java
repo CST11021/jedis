@@ -81,6 +81,11 @@ public final class RedisOutputStream extends FilterOutputStream {
         }
     }
 
+    /**
+     * CRLF是Carriage-Return Line-Feed的缩写，意思是回车换行，就是回车(CR, ASCII 13, \r) 换行(LF, ASCII 10, \n)。
+     *
+     * @throws IOException
+     */
     public void writeCrLf() throws IOException {
         if (2 >= buf.length - count) {
             flushBuffer();

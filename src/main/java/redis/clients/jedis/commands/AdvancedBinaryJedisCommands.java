@@ -6,6 +6,9 @@ import redis.clients.jedis.params.MigrateParams;
 
 import java.util.List;
 
+/**
+ * 提供高级操作redis的命令，如config相关，slowlog，client等命令，其中参数(K-V)必须以byte数组形式提供
+ */
 public interface AdvancedBinaryJedisCommands {
 
     List<byte[]> configGet(byte[] pattern);

@@ -12,6 +12,16 @@ import java.net.URI;
 import java.util.*;
 import java.util.Map.Entry;
 
+/**
+ * JedisCommands：           提供了针对redis数据结构的CURD等操作,其中参数(K-V)必须以String形式提供
+ * MultiKeyCommands：        提供了针对redis数据结构的CURD等批量操作,其中参数(K-V)必须以String数组形式提供
+ * AdvancedJedisCommands：   提供高级操作redis的命令,如config相关,slowlog,client等命令,其中参数(K-V)必须以String形式提供
+ * ScriptingCommands：       提供Lua脚本运行命令,命令必须以String形式提供。
+ * BasicCommands：           提供如ping,quit,flushDb运维类命令
+ * ClusterCommands：         提供集群状态查看,集群操作的命令
+ * SentinelCommands：        提供哨兵操作命令
+ * ModuleCommands：          提供redis模块加载和卸载命令
+ */
 public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommands, AdvancedJedisCommands, ScriptingCommands, BasicCommands, ClusterCommands, SentinelCommands, ModuleCommands {
 
     /** Jedis对象池： */
@@ -80,6 +90,44 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
     }
 
 
+
+
+    @Override
+    public void close() {
+        if (dataSource != null) {
+            JedisPoolAbstract pool = this.dataSource;
+            this.dataSource = null;
+            if (client.isBroken()) {
+                // 将Jedis客户端对象标记为不可用
+                pool.returnBrokenResource(this);
+            } else {
+                // 归还Jedis实例到对象池
+                pool.returnResource(this);
+            }
+        } else {
+            super.close();
+        }
+    }
+
+    public void setDataSource(JedisPoolAbstract jedisPool) {
+        this.dataSource = jedisPool;
+    }
+
+
+
+    /**
+     * 发送命令给reids服务端
+     *
+     * @param cmd
+     * @param args
+     * @return
+     */
+    public Object sendCommand(ProtocolCommand cmd, String... args) {
+        checkIsInMultiOrPipeline();
+        client.sendCommand(cmd, args);
+        return client.getOne();
+    }
+
     /**
      * Works same as <tt>ping()</tt> but returns argument message instead of <tt>PONG</tt>.
      *
@@ -91,6 +139,12 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.ping(message);
         return client.getBulkReply();
     }
+
+
+
+
+
+
 
 
     // key和字符串相关接口
@@ -852,19 +906,15 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
 
 
 
-
+    // List列表相关函数
 
     /**
-     * Add the string value to the head (LPUSH) or tail (RPUSH) of the list stored at key. If the key
-     * does not exist an empty list is created just before the append operation. If the key exists but
-     * is not a List an error is returned.
-     * <p>
+     * 将字符串值添加到存储在键处的列表的开头（LPUSH）或结尾（RPUSH），如果键不存在，则会在追加操作之前创建一个空列表。如果键存在但不是列表，则返回错误。
      * Time complexity: O(1)
      *
      * @param key
      * @param strings
-     * @return Integer reply, specifically, the number of elements inside the list after the push
-     * operation.
+     * @return 整数回复，特别是推操作后列表中元素的数量。
      */
     @Override
     public Long rpush(final String key, final String... strings) {
@@ -891,14 +941,11 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         return client.getIntegerReply();
     }
     /**
-     * Return the length of the list stored at the specified key. If the key does not exist zero is
-     * returned (the same behaviour as for empty lists). If the value stored at key is not a list an
-     * error is returned.
-     * <p>
+     * 返回存储在指定键处的列表的长度。如果键不存在，则返回零（与空列表相同的行为）。如果键处存储的值不是列表，则返回错误。
      * Time complexity: O(1)
      *
      * @param key
-     * @return The length of the list.
+     * @return 列表的长度。
      */
     @Override
     public Long llen(final String key) {
@@ -907,21 +954,16 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         return client.getIntegerReply();
     }
     /**
-     * Return the specified elements of the list stored at the specified key. Start and end are
-     * zero-based indexes. 0 is the first element of the list (the list head), 1 the next element and
-     * so on.
+     * 返回存储在指定键处的列表的指定元素. 开始和结束是从零开始的索引。 0是列表的第一个元素（列表头），1是下一个元素，依此类推。
      * <p>
-     * For example LRANGE foobar 0 2 will return the first three elements of the list.
+     * 例如，LRANGE foobar 0 2将返回列表的前三个元素。
      * <p>
-     * start and end can also be negative numbers indicating offsets from the end of the list. For
-     * example -1 is the last element of the list, -2 the penultimate element and so on.
+     * start和end也可以是负数，指示与列表末尾的偏移量。例如，-1是列表的最后一个元素，-2是倒数第二个元素，依此类推。
      * <p>
-     * <b>Consistency with range functions in various programming languages</b>
+     * <b>与各种编程语言中的范围函数保持一致</b>
      * <p>
-     * Note that if you have a list of numbers from 0 to 100, LRANGE 0 10 will return 11 elements,
-     * that is, rightmost item is included. This may or may not be consistent with behavior of
-     * range-related functions in your programming language of choice (think Ruby's Range.new,
-     * Array#slice or Python's range() function).
+     * 请注意，如果您有一个从0到100的数字列表，则LRANGE 0 10将返回11个元素，即包括最右边的项目。
+     * 这可能与您选择的编程语言中与范围相关的函数的行为一致或不一致（请考虑Ruby的Range.new，Array＃slice或Python的range（）函数）。
      * <p>
      * LRANGE behavior is consistent with one of Tcl.
      * <p>
@@ -979,8 +1021,8 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
     }
 
     /**
-     * Return the specified element of the list stored at the specified key. 0 is the first element, 1
-     * the second and so on. Negative indexes are supported, for example -1 is the last element, -2
+     * 返回存储在指定键处的列表的指定元素.
+     * 0 is the first element, 1 the second and so on. Negative indexes are supported, for example -1 is the last element, -2
      * the penultimate and so on.
      * <p>
      * If the value stored at key is not of list type an error is returned. If the index is out of
@@ -1003,7 +1045,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
     }
 
     /**
-     * Set a new value as the element at index position of the List at key.
+     * 将一个新值设置为键处List的索引位置处的元素。
      * <p>
      * Out of range indexes will generate an error.
      * <p>
@@ -1030,9 +1072,9 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
     }
 
     /**
-     * Remove the first count occurrences of the value element from the list. If count is zero all the
-     * elements are removed. If count is negative elements are removed from tail to head, instead to
-     * go from head to tail that is the normal behaviour. So for example LREM with count -2 and hello
+     * Remove the first count occurrences of the value element from the list.
+     * If count is zero all the elements are removed.
+     * If count is negative elements are removed from tail to head, instead to go from head to tail that is the normal behaviour. So for example LREM with count -2 and hello
      * as value to remove against the list (a,b,c,hello,x,hello,hello) will leave the list
      * (a,b,c,hello,x). The number of removed elements is returned as an integer, see below for more
      * information about the returned value. Note that non existing keys are considered like empty
@@ -1051,13 +1093,9 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.lrem(key, count, value);
         return client.getIntegerReply();
     }
-
     /**
-     * Atomically return and remove the first (LPOP) or last (RPOP) element of the list. For example
-     * if the list contains the elements "a","b","c" LPOP will return "a" and the list will become
-     * "b","c".
-     * <p>
-     * If the key does not exist or the list is already empty the special value 'nil' is returned.
+     * 以原子方式返回并删除列表的第一个（LPOP）或最后一个（RPOP）元素。例如，如果列表包含元素“ a”，“ b”，“ c”，则LPOP将返回“ a”，并且列表将变为“ b”，“ c”。
+     * 如果键不存在或列表已经为空，则返回特殊值“ nil”。
      *
      * @param key
      * @return Bulk reply
@@ -1069,13 +1107,9 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.lpop(key);
         return client.getBulkReply();
     }
-
     /**
-     * Atomically return and remove the first (LPOP) or last (RPOP) element of the list. For example
-     * if the list contains the elements "a","b","c" RPOP will return "c" and the list will become
-     * "a","b".
-     * <p>
-     * If the key does not exist or the list is already empty the special value 'nil' is returned.
+     * 以原子方式返回并删除列表的第一个（LPOP）或最后一个（RPOP）元素。例如，如果列表包含元素“ a”，“ b”，“ c”，则RPOP将返回“ c”，并且列表将变为“ a”，“ b”。
+     * 如果键不存在或列表已经为空，则返回特殊值“ nil”。
      *
      * @param key
      * @return Bulk reply
@@ -1087,12 +1121,9 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.rpop(key);
         return client.getBulkReply();
     }
-
     /**
-     * Atomically return and remove the last (tail) element of the srckey list, and push the element
-     * as the first (head) element of the dstkey list. For example if the source list contains the
-     * elements "a","b","c" and the destination list contains the elements "foo","bar" after an
-     * RPOPLPUSH command the content of the two lists will be "a","b" and "c","foo","bar".
+     * 以原子方式返回并删除srckey列表的最后一个（尾）元素，并将该元素推入dstkey列表的第一个（头）元素。
+     * 例如，如果源列表包含元素“ a”，“ b”，“ c”，而目标列表包含元素“ foo”，“ bar”，则在RPOPLPUSH命令之后，两个列表的内容将为“ a”， “ b”和“ c”，“ foo”，“ bar”。
      * <p>
      * If the key does not exist or the list is already empty the special value 'nil' is returned. If
      * the srckey and dstkey are the same the operation is equivalent to removing the last element
@@ -1111,11 +1142,15 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         return client.getBulkReply();
     }
 
+
+    // Set集合相关函数
+
     /**
-     * Add the specified member to the set value stored at key. If member is already a member of the
-     * set no operation is performed. If key does not exist a new set with the specified member as
-     * sole member is created. If the key exists but does not hold a set value an error is returned.
-     * <p>
+     * 将指定的成员添加到存储在key的设置值中。
+     * 如果member已经是集合的成员，则不执行任何操作。
+     * 如果key不存在，则创建一个具有指定成员作为唯一成员的新集合。
+     * 如果键存在但不保存设置值，则返回错误。
+     *
      * Time complexity O(1)
      *
      * @param key
@@ -1129,10 +1164,8 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.sadd(key, members);
         return client.getIntegerReply();
     }
-
     /**
-     * Return all the members (elements) of the set value stored at key. This is just syntax glue for
-     * {@link #sinter(String...) SINTER}.
+     * 返回键处存储的设置值的所有成员（元素）， This is just syntax glue for {@link #sinter(String...) SINTER}.
      * <p>
      * Time complexity O(N)
      *
@@ -1146,7 +1179,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     /**
      * Remove the specified member from the set value stored at key. If member was not a member of the
      * set no operation is performed. If key does not hold a set value an error is returned.
@@ -1164,13 +1196,10 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.srem(key, members);
         return client.getIntegerReply();
     }
-
     /**
-     * Remove a random element from a Set returning it as return value. If the Set is empty or the key
-     * does not exist, a nil object is returned.
+     * 从Set中删除一个随机元素，将其作为返回值返回。如果Set为空或键不存在，则返回nil对象。
      * <p>
-     * The {@link #srandmember(String)} command does a similar work but the returned element is not
-     * removed from the Set.
+     * The {@link #srandmember(String)} command does a similar work but the returned element is not removed from the Set.
      * <p>
      * Time complexity O(1)
      *
@@ -1183,7 +1212,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.spop(key);
         return client.getBulkReply();
     }
-
     @Override
     public Set<String> spop(final String key, final long count) {
         checkIsInMultiOrPipeline();
@@ -1192,11 +1220,8 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         if (members == null) return null;
         return SetFromList.of(members);
     }
-
     /**
-     * Move the specified member from the set at srckey to the set at dstkey. This operation is
-     * atomic, in every given moment the element will appear to be in the source or destination set
-     * for accessing clients.
+     * 将指定的成员从srckey处的集合移动到dstkey处的集合。此操作是原子操作，在任何给定的时刻，元素都将似乎位于用于访问客户端的源或目标集中。
      * <p>
      * If the source set does not exist or does not contain the specified element no operation is
      * performed and zero is returned, otherwise the element is removed from the source set and added
@@ -1219,10 +1244,8 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.smove(srckey, dstkey, member);
         return client.getIntegerReply();
     }
-
     /**
-     * Return the set cardinality (number of elements). If the key does not exist 0 is returned, like
-     * for empty sets.
+     * 返回设置的基数（元素数）。如果键不存在，则返回0，就像空集一样。
      *
      * @param key
      * @return Integer reply, specifically: the cardinality (number of elements) of the set as an
@@ -1234,16 +1257,13 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.scard(key);
         return client.getIntegerReply();
     }
-
     /**
-     * Return true if member is a member of the set stored at key, otherwise false is returned.
-     * <p>
+     * 如果member是存储在key处的集合的成员，则返回true，否则返回false。
      * Time complexity O(1)
      *
      * @param key
      * @param member
-     * @return Boolean reply, specifically: true if the element is a member of the set false if the element
-     * is not a member of the set OR if the key does not exist
+     * @return 如果元素是集合的成员，则为true；如果元素不是集合的成员，则为false；或者，如果键不存在，则为false
      */
     @Override
     public Boolean sismember(final String key, final String member) {
@@ -1251,7 +1271,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.sismember(key, member);
         return client.getIntegerReply() == 1;
     }
-
     /**
      * Return the members of a set resulting from the intersection of all the sets hold at the
      * specified keys. Like in {@link #lrange(String, long, long) LRANGE} the result is sent to the
@@ -1275,7 +1294,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     /**
      * This command works exactly like {@link #sinter(String...) SINTER} but instead of being returned
      * the resulting set is stored as dstkey.
@@ -1293,7 +1311,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.sinterstore(dstkey, keys);
         return client.getIntegerReply();
     }
-
     /**
      * Return the members of a set resulting from the union of all the sets hold at the specified
      * keys. Like in {@link #lrange(String, long, long) LRANGE} the result is sent to the client as a
@@ -1314,7 +1331,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     /**
      * This command works exactly like {@link #sunion(String...) SUNION} but instead of being returned
      * the resulting set is stored as dstkey. Any existing value in dstkey will be over-written.
@@ -1331,7 +1347,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.sunionstore(dstkey, keys);
         return client.getIntegerReply();
     }
-
     /**
      * Return the difference between the Set stored at key1 and all the Sets key2, ..., keyN
      * <p>
@@ -1360,7 +1375,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.sdiff(keys);
         return BuilderFactory.STRING_SET.build(client.getBinaryMultiBulkReply());
     }
-
     /**
      * This command works exactly like {@link #sdiff(String...) SDIFF} but instead of being returned
      * the resulting set is stored in dstkey.
@@ -1375,13 +1389,9 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.sdiffstore(dstkey, keys);
         return client.getIntegerReply();
     }
-
     /**
-     * Return a random element from a Set, without removing the element. If the Set is empty or the
-     * key does not exist, a nil object is returned.
-     * <p>
-     * The SPOP command does a similar work but the returned element is popped (removed) from the Set.
-     * <p>
+     * 从Set中返回一个随机元素，而不删除该元素。如果Set为空或键不存在，则返回nil对象。
+     * SPOP命令执行类似的工作，但是从Set中弹出（删除）返回的元素。
      * Time complexity O(1)
      *
      * @param key
@@ -1393,13 +1403,17 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.srandmember(key);
         return client.getBulkReply();
     }
-
     @Override
     public List<String> srandmember(final String key, final int count) {
         checkIsInMultiOrPipeline();
         client.srandmember(key, count);
         return client.getMultiBulkReply();
     }
+
+
+
+
+    // 有序集合相关函数
 
     /**
      * Add the specified member having the specified score to the sorted set stored at key. If member
@@ -1424,29 +1438,24 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.zadd(key, score, member);
         return client.getIntegerReply();
     }
-
     @Override
-    public Long zadd(final String key, final double score, final String member,
-                     final ZAddParams params) {
+    public Long zadd(final String key, final double score, final String member, final ZAddParams params) {
         checkIsInMultiOrPipeline();
         client.zadd(key, score, member, params);
         return client.getIntegerReply();
     }
-
     @Override
     public Long zadd(final String key, final Map<String, Double> scoreMembers) {
         checkIsInMultiOrPipeline();
         client.zadd(key, scoreMembers);
         return client.getIntegerReply();
     }
-
     @Override
     public Long zadd(final String key, final Map<String, Double> scoreMembers, final ZAddParams params) {
         checkIsInMultiOrPipeline();
         client.zadd(key, scoreMembers, params);
         return client.getIntegerReply();
     }
-
     @Override
     public Set<String> zrange(final String key, final long start, final long stop) {
         checkIsInMultiOrPipeline();
@@ -1454,7 +1463,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     /**
      * Remove the specified member from the sorted set value stored at key. If member was not a member
      * of the set no operation is performed. If key does not not hold a set value an error is
@@ -1473,7 +1481,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.zrem(key, members);
         return client.getIntegerReply();
     }
-
     /**
      * If member already exists in the sorted set adds the increment to its score and updates the
      * position of the element in the sorted set accordingly. If member does not already exist in the
@@ -1499,14 +1506,12 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.zincrby(key, increment, member);
         return BuilderFactory.DOUBLE.build(client.getOne());
     }
-
     @Override
     public Double zincrby(final String key, final double increment, final String member, final ZIncrByParams params) {
         checkIsInMultiOrPipeline();
         client.zincrby(key, increment, member, params);
         return BuilderFactory.DOUBLE.build(client.getOne());
     }
-
     /**
      * Return the rank (or index) of member in the sorted set at key, with scores being ordered from
      * low to high.
@@ -1530,7 +1535,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.zrank(key, member);
         return client.getIntegerReply();
     }
-
     /**
      * Return the rank (or index) of member in the sorted set at key, with scores being ordered from
      * high to low.
@@ -1554,7 +1558,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.zrevrank(key, member);
         return client.getIntegerReply();
     }
-
     @Override
     public Set<String> zrevrange(final String key, final long start, final long stop) {
         checkIsInMultiOrPipeline();
@@ -1562,21 +1565,18 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     @Override
     public Set<Tuple> zrangeWithScores(final String key, final long start, final long stop) {
         checkIsInMultiOrPipeline();
         client.zrangeWithScores(key, start, stop);
         return getTupledSet();
     }
-
     @Override
     public Set<Tuple> zrevrangeWithScores(final String key, final long start, final long stop) {
         checkIsInMultiOrPipeline();
         client.zrevrangeWithScores(key, start, stop);
         return getTupledSet();
     }
-
     /**
      * Return the sorted set cardinality (number of elements). If the key does not exist 0 is
      * returned, like for empty sorted sets.
@@ -1592,7 +1592,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.zcard(key);
         return client.getIntegerReply();
     }
-
     /**
      * Return the score of the specified element of the sorted set at key. If the specified element
      * does not exist in the sorted set, or the key does not exist at all, a special 'nil' value is
@@ -1610,35 +1609,30 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.zscore(key, member);
         return BuilderFactory.DOUBLE.build(client.getOne());
     }
-
     @Override
     public Tuple zpopmax(final String key) {
         checkIsInMultiOrPipeline();
         client.zpopmax(key);
         return BuilderFactory.TUPLE.build(client.getBinaryMultiBulkReply());
     }
-
     @Override
     public Set<Tuple> zpopmax(final String key, final int count) {
         checkIsInMultiOrPipeline();
         client.zpopmax(key, count);
         return getTupledSet();
     }
-
     @Override
     public Tuple zpopmin(final String key) {
         checkIsInMultiOrPipeline();
         client.zpopmin(key);
         return BuilderFactory.TUPLE.build(client.getBinaryMultiBulkReply());
     }
-
     @Override
     public Set<Tuple> zpopmin(final String key, final int count) {
         checkIsInMultiOrPipeline();
         client.zpopmin(key, count);
         return getTupledSet();
     }
-
     @Override
     public String watch(final String... keys) {
         checkIsInMultiOrPipeline();
@@ -1646,12 +1640,16 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         return client.getStatusCodeReply();
     }
 
+
+
+
+    // List列表或Set集合排序相关函数
+
     /**
-     * Sort a Set or a List.
+     * 对集合或列表进行排序。
      * <p>
-     * Sort the elements contained in the List, Set, or Sorted Set value at key. By default sorting is
-     * numeric with elements being compared as double precision floating point numbers. This is the
-     * simplest form of SORT.
+     * 对键处的“列表”，“集合”或“排序的集合”值中包含的元素进行排序。默认情况下，排序是数字形式的，元素被比较为双精度浮点数。
+     * 这是最简单的SORT形式。
      *
      * @param key
      * @return Assuming the Set/List at key contains a list of numbers, the return value will be the
@@ -1666,15 +1664,9 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.sort(key);
         return client.getMultiBulkReply();
     }
-
     /**
-     * Sort a Set or a List accordingly to the specified parameters.
-     * <p>
-     * <b>examples:</b>
-     * <p>
-     * Given are the following sets and key/values:
+     * 根据指定的参数对Set或List进行排序，例如，给出了以下集合和键/值：
      *
-     * <pre>
      * x = [1, 2, 3]
      * y = [a, b, c]
      *
@@ -1685,8 +1677,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
      * w1 = 9
      * w2 = 8
      * w3 = 7
-     * </pre>
-     * <p>
+     *
      * Sort Order:
      *
      * <pre>
@@ -1748,11 +1739,51 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.sort(key, sortingParameters);
         return client.getMultiBulkReply();
     }
+    /**
+     * 根据指定的参数对Set或List进行排序，并将结果存储在dstkey中。
+     *
+     * @param key
+     * @param sortingParameters
+     * @param dstkey
+     * @return The number of elements of the list at dstkey.
+     * @see #sort(String, SortingParams)
+     * @see #sort(String)
+     * @see #sort(String, String)
+     */
+    @Override
+    public Long sort(final String key, final SortingParams sortingParameters, final String dstkey) {
+        checkIsInMultiOrPipeline();
+        client.sort(key, sortingParameters, dstkey);
+        return client.getIntegerReply();
+    }
+    /**
+     * 对集合或列表进行排序，并将结果存储在dstkey中。
+     * <p>
+     * Sort the elements contained in the List, Set, or Sorted Set value at key and store the result
+     * at dstkey. By default sorting is numeric with elements being compared as double precision
+     * floating point numbers. This is the simplest form of SORT.
+     *
+     * @param key
+     * @param dstkey
+     * @return The number of elements of the list at dstkey.
+     * @see #sort(String)
+     * @see #sort(String, SortingParams)
+     * @see #sort(String, SortingParams, String)
+     */
+    @Override
+    public Long sort(final String key, final String dstkey) {
+        checkIsInMultiOrPipeline();
+        client.sort(key, dstkey);
+        return client.getIntegerReply();
+    }
+
+
+
+
+
 
     /**
-     * BLPOP (and BRPOP) is a blocking list pop primitive. You can see this commands as blocking
-     * versions of LPOP and RPOP able to block if the specified keys don't exist or contain empty
-     * lists.
+     * BLPOP（和BRPOP）是阻止列表弹出原语。您可以看到此命令是LPOP和RPOP的阻止版本，如果指定的键不存在或包含空列表，则可以阻止。
      * <p>
      * The following is a description of the exact semantic. We describe BLPOP but the two commands
      * are identical, the only difference is that BLPOP pops the element from the left (head) of the
@@ -1817,16 +1848,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         return blpop(getArgsAddTimeout(timeout, keys));
     }
 
-    private String[] getArgsAddTimeout(int timeout, String[] keys) {
-        final int keyCount = keys.length;
-        final String[] args = new String[keyCount + 1];
-        for (int at = 0; at != keyCount; ++at) {
-            args[at] = keys[at];
-        }
 
-        args[keyCount] = String.valueOf(timeout);
-        return args;
-    }
 
     @Override
     public List<String> blpop(final String... args) {
@@ -1852,44 +1874,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         }
     }
 
-    /**
-     * Sort a Set or a List accordingly to the specified parameters and store the result at dstkey.
-     *
-     * @param key
-     * @param sortingParameters
-     * @param dstkey
-     * @return The number of elements of the list at dstkey.
-     * @see #sort(String, SortingParams)
-     * @see #sort(String)
-     * @see #sort(String, String)
-     */
-    @Override
-    public Long sort(final String key, final SortingParams sortingParameters, final String dstkey) {
-        checkIsInMultiOrPipeline();
-        client.sort(key, sortingParameters, dstkey);
-        return client.getIntegerReply();
-    }
 
-    /**
-     * Sort a Set or a List and Store the Result at dstkey.
-     * <p>
-     * Sort the elements contained in the List, Set, or Sorted Set value at key and store the result
-     * at dstkey. By default sorting is numeric with elements being compared as double precision
-     * floating point numbers. This is the simplest form of SORT.
-     *
-     * @param key
-     * @param dstkey
-     * @return The number of elements of the list at dstkey.
-     * @see #sort(String)
-     * @see #sort(String, SortingParams)
-     * @see #sort(String, SortingParams, String)
-     */
-    @Override
-    public Long sort(final String key, final String dstkey) {
-        checkIsInMultiOrPipeline();
-        client.sort(key, dstkey);
-        return client.getIntegerReply();
-    }
 
     /**
      * BLPOP (and BRPOP) is a blocking list pop primitive. You can see this commands as blocking
@@ -1973,9 +1958,14 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         return client.getIntegerReply();
     }
 
+
+
+
+
+    // 有序集合：分值排序相关函数
+
     /**
-     * Return the all the elements in the sorted set at key with a score between min and max
-     * (including elements with score equal to min or max).
+     * 返回键处排序集中的所有元素，其分数介于min和max之间（包括分数等于min或max的元素）。
      * <p>
      * The elements having the same score are returned sorted lexicographically as ASCII strings (this
      * follows from a property of Redis sorted sets and does not involve further computation).
@@ -2029,7 +2019,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     @Override
     public Set<String> zrangeByScore(final String key, final String min, final String max) {
         checkIsInMultiOrPipeline();
@@ -2037,7 +2026,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     /**
      * Return the all the elements in the sorted set at key with a score between min and max
      * (including elements with score equal to min or max).
@@ -2089,14 +2077,12 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
      * @see #zcount(String, double, double)
      */
     @Override
-    public Set<String> zrangeByScore(final String key, final double min, final double max,
-                                     final int offset, final int count) {
+    public Set<String> zrangeByScore(final String key, final double min, final double max, final int offset, final int count) {
         checkIsInMultiOrPipeline();
         client.zrangeByScore(key, min, max, offset, count);
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     @Override
     public Set<String> zrangeByScore(final String key, final String min, final String max, final int offset, final int count) {
         checkIsInMultiOrPipeline();
@@ -2104,7 +2090,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     /**
      * Return the all the elements in the sorted set at key with a score between min and max
      * (including elements with score equal to min or max).
@@ -2159,14 +2144,12 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.zrangeByScoreWithScores(key, min, max);
         return getTupledSet();
     }
-
     @Override
     public Set<Tuple> zrangeByScoreWithScores(final String key, final String min, final String max) {
         checkIsInMultiOrPipeline();
         client.zrangeByScoreWithScores(key, min, max);
         return getTupledSet();
     }
-
     /**
      * Return the all the elements in the sorted set at key with a score between min and max
      * (including elements with score equal to min or max).
@@ -2223,14 +2206,12 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.zrangeByScoreWithScores(key, min, max, offset, count);
         return getTupledSet();
     }
-
     @Override
     public Set<Tuple> zrangeByScoreWithScores(final String key, final String min, final String max, final int offset, final int count) {
         checkIsInMultiOrPipeline();
         client.zrangeByScoreWithScores(key, min, max, offset, count);
         return getTupledSet();
     }
-
     @Override
     public Set<String> zrevrangeByScore(final String key, final double max, final double min) {
         checkIsInMultiOrPipeline();
@@ -2238,7 +2219,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     @Override
     public Set<String> zrevrangeByScore(final String key, final String max, final String min) {
         checkIsInMultiOrPipeline();
@@ -2246,7 +2226,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     @Override
     public Set<String> zrevrangeByScore(final String key, final double max, final double min, final int offset, final int count) {
         checkIsInMultiOrPipeline();
@@ -2254,28 +2233,24 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     @Override
     public Set<Tuple> zrevrangeByScoreWithScores(final String key, final double max, final double min) {
         checkIsInMultiOrPipeline();
         client.zrevrangeByScoreWithScores(key, max, min);
         return getTupledSet();
     }
-
     @Override
     public Set<Tuple> zrevrangeByScoreWithScores(final String key, final double max, final double min, final int offset, final int count) {
         checkIsInMultiOrPipeline();
         client.zrevrangeByScoreWithScores(key, max, min, offset, count);
         return getTupledSet();
     }
-
     @Override
     public Set<Tuple> zrevrangeByScoreWithScores(final String key, final String max, final String min, final int offset, final int count) {
         checkIsInMultiOrPipeline();
         client.zrevrangeByScoreWithScores(key, max, min, offset, count);
         return getTupledSet();
     }
-
     @Override
     public Set<String> zrevrangeByScore(final String key, final String max, final String min, final int offset, final int count) {
         checkIsInMultiOrPipeline();
@@ -2283,13 +2258,17 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     @Override
     public Set<Tuple> zrevrangeByScoreWithScores(final String key, final String max, final String min) {
         checkIsInMultiOrPipeline();
         client.zrevrangeByScoreWithScores(key, max, min);
         return getTupledSet();
     }
+
+
+
+
+
 
     /**
      * Remove all elements in the sorted set at key with rank between start and end. Start and end are
@@ -2312,7 +2291,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.zremrangeByRank(key, start, stop);
         return client.getIntegerReply();
     }
-
     /**
      * Remove all the elements in the sorted set at key with a score between min and max (including
      * elements with score equal to min or max).
@@ -2333,7 +2311,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.zremrangeByScore(key, min, max);
         return client.getIntegerReply();
     }
-
     @Override
     public Long zremrangeByScore(final String key, final String min, final String max) {
         checkIsInMultiOrPipeline();
@@ -2378,11 +2355,9 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.zunionstore(dstkey, sets);
         return client.getIntegerReply();
     }
-
     /**
-     * Creates a union or intersection of N sorted sets given by keys k1 through kN, and stores it at
-     * dstkey. It is mandatory to provide the number of input keys N, before passing the input keys
-     * and the other (optional) arguments.
+     * Creates a union or intersection of N sorted sets given by keys k1 through kN, and stores it at dstkey.
+     * It is mandatory to provide the number of input keys N, before passing the input keys and the other (optional) arguments.
      * <p>
      * As the terms imply, the {@link #zinterstore(String, String...) ZINTERSTORE} command requires an
      * element to be present in each of the given inputs to be inserted in the result. The
@@ -2417,7 +2392,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.zunionstore(dstkey, params, sets);
         return client.getIntegerReply();
     }
-
     /**
      * Creates a union or intersection of N sorted sets given by keys k1 through kN, and stores it at
      * dstkey. It is mandatory to provide the number of input keys N, before passing the input keys
@@ -2455,7 +2429,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.zinterstore(dstkey, sets);
         return client.getIntegerReply();
     }
-
     /**
      * Creates a union or intersection of N sorted sets given by keys k1 through kN, and stores it at
      * dstkey. It is mandatory to provide the number of input keys N, before passing the input keys
@@ -2502,6 +2475,31 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         return client.getIntegerReply();
     }
 
+
+    /**
+     * 指定区间内的元素列表：
+     * redis 127.0.0.1:6379> ZADD myzset 0 a 0 b 0 c 0 d 0 e 0 f 0 g
+     * (integer) 7
+     * redis 127.0.0.1:6379> ZRANGEBYLEX myzset - [c
+     * 1) "a"
+     * 2) "b"
+     * 3) "c"
+     * redis 127.0.0.1:6379> ZRANGEBYLEX myzset - (c
+     * 1) "a"
+     * 2) "b"
+     * redis 127.0.0.1:6379> ZRANGEBYLEX myzset [aaa (g
+     * 1) "b"
+     * 2) "c"
+     * 3) "d"
+     * 4) "e"
+     * 5) "f"
+     * redis>
+     *
+     * @param key
+     * @param min
+     * @param max
+     * @return
+     */
     @Override
     public Set<String> zrangeByLex(final String key, final String min, final String max) {
         checkIsInMultiOrPipeline();
@@ -2509,7 +2507,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     @Override
     public Set<String> zrangeByLex(final String key, final String min, final String max, final int offset, final int count) {
         checkIsInMultiOrPipeline();
@@ -2517,7 +2514,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     @Override
     public Set<String> zrevrangeByLex(final String key, final String max, final String min) {
         checkIsInMultiOrPipeline();
@@ -2525,7 +2521,6 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     @Override
     public Set<String> zrevrangeByLex(final String key, final String max, final String min, final int offset, final int count) {
         checkIsInMultiOrPipeline();
@@ -2533,13 +2528,17 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         final List<String> members = client.getMultiBulkReply();
         return SetFromList.of(members);
     }
-
     @Override
     public Long zremrangeByLex(final String key, final String min, final String max) {
         checkIsInMultiOrPipeline();
         client.zremrangeByLex(key, min, max);
         return client.getIntegerReply();
     }
+
+
+
+
+
 
     @Override
     public Long strlen(final String key) {
@@ -2753,48 +2752,16 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         return client.getStatusCodeReply();
     }
 
-    @Override
-    public void subscribe(final JedisPubSub jedisPubSub, final String... channels) {
-        client.setTimeoutInfinite();
-        try {
-            jedisPubSub.proceed(client, channels);
-        } finally {
-            client.rollbackTimeout();
-        }
-    }
 
-    @Override
-    public Long publish(final String channel, final String message) {
-        checkIsInMultiOrPipeline();
-        client.publish(channel, message);
-        return client.getIntegerReply();
-    }
 
-    @Override
-    public void psubscribe(final JedisPubSub jedisPubSub, final String... patterns) {
-        checkIsInMultiOrPipeline();
-        client.setTimeoutInfinite();
-        try {
-            jedisPubSub.proceedWithPatterns(client, patterns);
-        } finally {
-            client.rollbackTimeout();
-        }
-    }
 
-    protected static String[] getParams(List<String> keys, List<String> args) {
-        int keyCount = keys.size();
-        int argCount = args.size();
 
-        String[] params = new String[keyCount + args.size()];
 
-        for (int i = 0; i < keyCount; i++)
-            params[i] = keys.get(i);
 
-        for (int i = 0; i < argCount; i++)
-            params[keyCount + i] = args.get(i);
 
-        return params;
-    }
+
+
+
 
     @Override
     public Object eval(final String script, final int keyCount, final String... params) {
@@ -3206,11 +3173,19 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         return client.getStatusCodeReply();
     }
 
+
+    // SCAN命令相关：SCAN 命令及其相关的 SSCAN 命令、 HSCAN 命令和 ZSCAN 命令都用于增量地迭代（incrementally iterate）一集元素（a collection of elements）：
+    // 参考：http://doc.redisfans.com/key/scan.html
+    //
+    // SCAN 命令用于迭代当前数据库中的数据库键。
+    // SSCAN 命令用于迭代集合键中的元素。
+    // HSCAN 命令用于迭代哈希键中的键值对。
+    // ZSCAN 命令用于迭代有序集合中的元素（包括元素成员和元素分值）。
+
     @Override
     public ScanResult<String> scan(final String cursor) {
         return scan(cursor, new ScanParams());
     }
-
     @Override
     public ScanResult<String> scan(final String cursor, final ScanParams params) {
         checkIsInMultiOrPipeline();
@@ -3224,12 +3199,10 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         }
         return new ScanResult<>(newcursor, results);
     }
-
     @Override
     public ScanResult<Map.Entry<String, String>> hscan(final String key, final String cursor) {
         return hscan(key, cursor, new ScanParams());
     }
-
     @Override
     public ScanResult<Map.Entry<String, String>> hscan(final String key, final String cursor, final ScanParams params) {
         checkIsInMultiOrPipeline();
@@ -3245,12 +3218,10 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         }
         return new ScanResult<>(newcursor, results);
     }
-
     @Override
     public ScanResult<String> sscan(final String key, final String cursor) {
         return sscan(key, cursor, new ScanParams());
     }
-
     @Override
     public ScanResult<String> sscan(final String key, final String cursor, final ScanParams params) {
         checkIsInMultiOrPipeline();
@@ -3264,12 +3235,10 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         }
         return new ScanResult<>(newcursor, results);
     }
-
     @Override
     public ScanResult<Tuple> zscan(final String key, final String cursor) {
         return zscan(key, cursor, new ScanParams());
     }
-
     @Override
     public ScanResult<Tuple> zscan(final String key, final String cursor, final ScanParams params) {
         checkIsInMultiOrPipeline();
@@ -3284,6 +3253,9 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         }
         return new ScanResult<>(newcursor, results);
     }
+
+
+
 
     @Override
     public String clusterNodes() {
@@ -3432,78 +3404,73 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         return client.getObjectMultiBulkReply();
     }
 
-    public String asking() {
-        checkIsInMultiOrPipeline();
-        client.asking();
-        return client.getStatusCodeReply();
-    }
 
-    public List<String> pubsubChannels(final String pattern) {
-        checkIsInMultiOrPipeline();
-        client.pubsubChannels(pattern);
-        return client.getMultiBulkReply();
-    }
 
-    public Long pubsubNumPat() {
-        checkIsInMultiOrPipeline();
-        client.pubsubNumPat();
-        return client.getIntegerReply();
-    }
 
-    public Map<String, String> pubsubNumSub(String... channels) {
-        checkIsInMultiOrPipeline();
-        client.pubsubNumSub(channels);
-        return BuilderFactory.PUBSUB_NUMSUB_MAP.build(client.getBinaryMultiBulkReply());
-    }
 
-    @Override
-    public void close() {
-        if (dataSource != null) {
-            JedisPoolAbstract pool = this.dataSource;
-            this.dataSource = null;
-            if (client.isBroken()) {
-                // 将Jedis客户端对象标记为不可用
-                pool.returnBrokenResource(this);
-            } else {
-                // 归还Jedis实例到对象池
-                pool.returnResource(this);
-            }
-        } else {
-            super.close();
-        }
-    }
 
-    public void setDataSource(JedisPoolAbstract jedisPool) {
-        this.dataSource = jedisPool;
-    }
 
+
+
+
+
+
+    // HyperLogLog
+
+    /**
+     * 添加指定元素到 HyperLogLog 中
+     *
+     * @param key
+     * @param elements
+     * @return
+     */
     @Override
     public Long pfadd(final String key, final String... elements) {
         checkIsInMultiOrPipeline();
         client.pfadd(key, elements);
         return client.getIntegerReply();
     }
-
+    /**
+     * 返回给定 HyperLogLog 的基数估算值
+     *
+     * @param key
+     * @return
+     */
     @Override
     public long pfcount(final String key) {
         checkIsInMultiOrPipeline();
         client.pfcount(key);
         return client.getIntegerReply();
     }
-
+    /**
+     * 返回给定 HyperLogLog 的基数估算值
+     *
+     * @param keys
+     * @return
+     */
     @Override
     public long pfcount(final String... keys) {
         checkIsInMultiOrPipeline();
         client.pfcount(keys);
         return client.getIntegerReply();
     }
-
+    /**
+     * 将多个 HyperLogLog 合并为一个 HyperLogLog
+     *
+     * @param destkey
+     * @param sourcekeys
+     * @return
+     */
     @Override
     public String pfmerge(final String destkey, final String... sourcekeys) {
         checkIsInMultiOrPipeline();
         client.pfmerge(destkey, sourcekeys);
         return client.getStatusCodeReply();
     }
+
+
+
+
 
     @Override
     public List<String> blpop(final int timeout, final String key) {
@@ -3615,26 +3582,31 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         return BuilderFactory.GEORADIUS_WITH_PARAMS_RESULT.build(client.getObjectMultiBulkReply());
     }
 
+
+
+    // 模块相关命令
+
     @Override
     public String moduleLoad(final String path) {
         checkIsInMultiOrPipeline();
         client.moduleLoad(path);
         return client.getStatusCodeReply();
     }
-
     @Override
     public String moduleUnload(final String name) {
         checkIsInMultiOrPipeline();
         client.moduleUnload(name);
         return client.getStatusCodeReply();
     }
-
     @Override
     public List<Module> moduleList() {
         checkIsInMultiOrPipeline();
         client.moduleList();
         return BuilderFactory.MODULE_LIST.build(client.getObjectMultiBulkReply());
     }
+
+
+
 
     @Override
     public String aclSetUser(final String name) {
@@ -3722,6 +3694,70 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.memoryDoctor();
         return client.getBulkReply();
     }
+
+
+
+
+
+
+    // 发布订阅相关接口
+
+    /**
+     * 订阅频道
+     *
+     * @param jedisPubSub
+     * @param channels
+     */
+    @Override
+    public void subscribe(final JedisPubSub jedisPubSub, final String... channels) {
+        client.setTimeoutInfinite();
+        try {
+            jedisPubSub.proceed(client, channels);
+        } finally {
+            client.rollbackTimeout();
+        }
+    }
+    /**
+     * 发布消息到指定的channel
+     *
+     * @param channel
+     * @param message
+     * @return 返回channel订阅者的数量
+     */
+    @Override
+    public Long publish(final String channel, final String message) {
+        checkIsInMultiOrPipeline();
+        client.publish(channel, message);
+        return client.getIntegerReply();
+    }
+    @Override
+    public void psubscribe(final JedisPubSub jedisPubSub, final String... patterns) {
+        checkIsInMultiOrPipeline();
+        client.setTimeoutInfinite();
+        try {
+            jedisPubSub.proceedWithPatterns(client, patterns);
+        } finally {
+            client.rollbackTimeout();
+        }
+    }
+    public List<String> pubsubChannels(final String pattern) {
+        checkIsInMultiOrPipeline();
+        client.pubsubChannels(pattern);
+        return client.getMultiBulkReply();
+    }
+    public Long pubsubNumPat() {
+        checkIsInMultiOrPipeline();
+        client.pubsubNumPat();
+        return client.getIntegerReply();
+    }
+    public Map<String, String> pubsubNumSub(String... channels) {
+        checkIsInMultiOrPipeline();
+        client.pubsubNumSub(channels);
+        return BuilderFactory.PUBSUB_NUMSUB_MAP.build(client.getBinaryMultiBulkReply());
+    }
+
+
+
 
 
 
@@ -3904,20 +3940,47 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
     }
 
 
-
+    public String asking() {
+        checkIsInMultiOrPipeline();
+        client.asking();
+        return client.getStatusCodeReply();
+    }
 
     /**
-     * 发送命令给reids服务端
+     * 将复制keys数组，并将timeout添加的新的数组里
      *
-     * @param cmd
-     * @param args
+     * @param timeout
+     * @param keys
      * @return
      */
-    public Object sendCommand(ProtocolCommand cmd, String... args) {
-        checkIsInMultiOrPipeline();
-        client.sendCommand(cmd, args);
-        return client.getOne();
+    private String[] getArgsAddTimeout(int timeout, String[] keys) {
+        final int keyCount = keys.length;
+        final String[] args = new String[keyCount + 1];
+        for (int at = 0; at != keyCount; ++at) {
+            args[at] = keys[at];
+        }
+
+        args[keyCount] = String.valueOf(timeout);
+        return args;
     }
+
+    protected static String[] getParams(List<String> keys, List<String> args) {
+        int keyCount = keys.size();
+        int argCount = args.size();
+
+        String[] params = new String[keyCount + args.size()];
+
+        for (int i = 0; i < keyCount; i++)
+            params[i] = keys.get(i);
+
+        for (int i = 0; i < argCount; i++)
+            params[keyCount + i] = args.get(i);
+
+        return params;
+    }
+
+
+
 
 
 

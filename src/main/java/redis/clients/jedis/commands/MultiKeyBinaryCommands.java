@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * 提供了针对redis数据结构的CURD等批量操作，其中参数(K-V)必须以byte数组形式提供
+ */
 public interface MultiKeyBinaryCommands {
     Long del(byte[]... keys);
 

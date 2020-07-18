@@ -396,8 +396,7 @@ public interface Commands {
 
     void xpending(String key, String groupname, StreamEntryID start, StreamEntryID end, int count, String consumername);
 
-    void xclaim(String key, String group, String consumername, long minIdleTime, long newIdleTime, int retries,
-                boolean force, StreamEntryID... ids);
+    void xclaim(String key, String group, String consumername, long minIdleTime, long newIdleTime, int retries, boolean force, StreamEntryID... ids);
 
     void xinfoStream(String key);
 

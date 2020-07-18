@@ -626,7 +626,6 @@ public interface JedisCommands {
     // HyperLogLog
 
     Long pfadd(String key, String... elements);
-
     long pfcount(String key);
 
 

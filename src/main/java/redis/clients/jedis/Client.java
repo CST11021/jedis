@@ -1018,21 +1018,27 @@ public class Client extends BinaryClient implements Commands {
                 nodeId);
     }
 
+
+
+
+    // HyperLogLog相关
+
     public void pfadd(final String key, final String... elements) {
         pfadd(SafeEncoder.encode(key), SafeEncoder.encodeMany(elements));
     }
-
     public void pfcount(final String key) {
         pfcount(SafeEncoder.encode(key));
     }
-
     public void pfcount(final String... keys) {
         pfcount(SafeEncoder.encodeMany(keys));
     }
-
     public void pfmerge(final String destkey, final String... sourcekeys) {
         pfmerge(SafeEncoder.encode(destkey), SafeEncoder.encodeMany(sourcekeys));
     }
+
+
+
+
 
     public void clusterSetSlotStable(final int slot) {
         cluster(Protocol.CLUSTER_SETSLOT, String.valueOf(slot), Protocol.CLUSTER_SETSLOT_STABLE);

@@ -2,6 +2,9 @@ package redis.clients.jedis.commands;
 
 import java.util.List;
 
+/**
+ * 提供Lua脚本运行命令,命令必须以byte数组形式提供
+ */
 public interface BinaryScriptingCommands {
 
     Object eval(byte[] script, byte[] keyCount, byte[]... params);

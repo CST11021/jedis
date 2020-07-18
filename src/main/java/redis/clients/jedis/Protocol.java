@@ -1,5 +1,6 @@
 package redis.clients.jedis;
 
+import com.sun.org.apache.bcel.internal.generic.LREM;
 import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.exceptions.*;
 import redis.clients.jedis.util.RedisInputStream;
@@ -80,17 +81,27 @@ public final class Protocol {
         // this prevent the class from instantiation
     }
 
+    /**
+     * 发送命令给redis服务
+     *
+     * @param os
+     * @param command
+     * @param args
+     */
     public static void sendCommand(final RedisOutputStream os, final ProtocolCommand command, final byte[]... args) {
         sendCommand(os, command.getRaw(), args);
     }
-
     private static void sendCommand(final RedisOutputStream os, final byte[] command, final byte[]... args) {
         try {
+            // 写入：*
             os.write(ASTERISK_BYTE);
+            // 写入：args
             os.writeIntCrLf(args.length + 1);
+            // 写入：$
             os.write(DOLLAR_BYTE);
             os.writeIntCrLf(command.length);
             os.write(command);
+            // CRLF是Carriage-Return Line-Feed的缩写，意思是回车换行，就是回车(CR, ASCII 13, \r) 换行(LF, ASCII 10, \n)
             os.writeCrLf();
 
             for (final byte[] arg : args) {
@@ -149,24 +160,7 @@ public final class Protocol {
         return response;
     }
 
-    private static Object process(final RedisInputStream is) {
-        final byte b = is.readByte();
-        switch (b) {
-            case PLUS_BYTE:
-                return processStatusCodeReply(is);
-            case DOLLAR_BYTE:
-                return processBulkReply(is);
-            case ASTERISK_BYTE:
-                return processMultiBulkReply(is);
-            case COLON_BYTE:
-                return processInteger(is);
-            case MINUS_BYTE:
-                processError(is);
-                return null;
-            default:
-                throw new JedisConnectionException("Unknown reply: " + (char) b);
-        }
-    }
+
 
     private static byte[] processStatusCodeReply(final RedisInputStream is) {
         return is.readLineBytes();
@@ -198,6 +192,47 @@ public final class Protocol {
         return is.readLongCrLf();
     }
 
+
+
+    /**
+     * 从输入流程读取redis服务返回的数据
+     *
+     * @param is
+     * @return
+     */
+    public static Object read(final RedisInputStream is) {
+        return process(is);
+    }
+    /**
+     * 从输入流程读取redis服务返回的数据
+     *
+     * @param is
+     * @return
+     */
+    private static Object process(final RedisInputStream is) {
+        final byte b = is.readByte();
+        switch (b) {
+            case PLUS_BYTE:
+                return processStatusCodeReply(is);
+            case DOLLAR_BYTE:
+                return processBulkReply(is);
+            case ASTERISK_BYTE:
+                return processMultiBulkReply(is);
+            case COLON_BYTE:
+                return processInteger(is);
+            case MINUS_BYTE:
+                processError(is);
+                return null;
+            default:
+                throw new JedisConnectionException("Unknown reply: " + (char) b);
+        }
+    }
+    /**
+     * 从输入流程读取redis服务返回的数据
+     *
+     * @param is
+     * @return
+     */
     private static List<Object> processMultiBulkReply(final RedisInputStream is) {
         final int num = is.readIntCrLf();
         if (num == -1) {
@@ -213,11 +248,6 @@ public final class Protocol {
         }
         return ret;
     }
-
-    public static Object read(final RedisInputStream is) {
-        return process(is);
-    }
-
 
     // 将对应的值转为字节
 
@@ -240,7 +270,11 @@ public final class Protocol {
         }
     }
 
+    /**
+     * redis命令枚举
+     */
     public static enum Command implements ProtocolCommand {
+        /***/
         PING, SET, GET, QUIT, EXISTS, DEL, UNLINK, TYPE, FLUSHDB, KEYS, RANDOMKEY, RENAME, RENAMENX,
         RENAMEX, DBSIZE, EXPIRE, EXPIREAT, TTL, SELECT, MOVE, FLUSHALL, GETSET, MGET, SETNX, SETEX,
         MSET, MSETNX, DECRBY, DECR, INCRBY, INCR, APPEND, SUBSTR, HSET, HGET, HSETNX, HMSET, HMGET,
@@ -272,7 +306,11 @@ public final class Protocol {
         }
     }
 
+    /**
+     * 关键字，通常作为{@link #sendCommand(RedisOutputStream, byte[], byte[]...)}方法的参赛
+     */
     public static enum Keyword {
+        /***/
         AGGREGATE, ALPHA, ASC, BY, DESC, GET, LIMIT, MESSAGE, NO, NOSORT, PMESSAGE, PSUBSCRIBE,
         PUNSUBSCRIBE, OK, ONE, QUEUED, SET, STORE, SUBSCRIBE, UNSUBSCRIBE, WEIGHTS, WITHSCORES,
         RESETSTAT, REWRITE, RESET, FLUSH, EXISTS, LOAD, KILL, LEN, REFCOUNT, ENCODING, IDLETIME,

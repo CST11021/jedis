@@ -6,7 +6,7 @@ import redis.clients.jedis.Response;
 import java.util.List;
 
 /**
- * Pipelined responses for all of the low level, non key related commands
+ * 所有与底层无关的低级命令的管道响应
  */
 public interface BasicRedisPipeline {
 

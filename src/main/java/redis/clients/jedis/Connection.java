@@ -25,16 +25,16 @@ public class Connection implements Closeable {
 
     private static final byte[][] EMPTY_ARGS = new byte[0][];
 
-    /** 用于创建连接redis服务器的socket工厂 */
-    private JedisSocketFactory jedisSocketFactory;
+    /** 当socket创建异常时，该值置为false */
+    private boolean broken = false;
     /** JedisSocketFactory创建的socket，表示一个Connection连接 */
     private Socket socket;
+    /** 用于创建连接redis服务器的socket工厂 */
+    private JedisSocketFactory jedisSocketFactory;
     /** 表示socket输出流，客户端通过该对象发送redis命令 */
     private RedisOutputStream outputStream;
     /** 表示socket输入流，客户端通过该对象获取redis返回的信息 */
     private RedisInputStream inputStream;
-    /** 当socket创建异常时，该值置为false */
-    private boolean broken = false;
 
 
     public Connection() {
@@ -59,9 +59,6 @@ public class Connection implements Closeable {
 
 
 
-    public Socket getSocket() {
-        return socket;
-    }
 
     /**
      * 如果连接断开，则重连，并将soTimeout设置为0
@@ -77,9 +74,8 @@ public class Connection implements Closeable {
             throw new JedisConnectionException(ex);
         }
     }
-
     /**
-     * 设置socket的soTimeout时间
+     * 设置当前socket的soTimeout时间
      */
     public void rollbackTimeout() {
         try {
@@ -103,26 +99,26 @@ public class Connection implements Closeable {
         }
         sendCommand(cmd, bargs);
     }
+    /**
+     *
+     * @param cmd
+     * @param args
+     */
     public void sendCommand(final ProtocolCommand cmd, final byte[]... args) {
         try {
+            // 创建一个socket连接
             connect();
+            // 将命令发送到redis服务器
             Protocol.sendCommand(outputStream, cmd, args);
         } catch (JedisConnectionException ex) {
-            /*
-             * When client send request which formed by invalid protocol, Redis send back error message
-             * before close connection. We try to read it to provide reason of failure.
-             */
+            // 当客户端发送由无效协议形成的请求时，Redis在关闭连接之前发送回错误消息。我们尝试阅读以提供失败原因.
             try {
                 String errorMessage = Protocol.readErrorLineIfPossible(inputStream);
                 if (errorMessage != null && errorMessage.length() > 0) {
                     ex = new JedisConnectionException(errorMessage, ex.getCause());
                 }
             } catch (Exception e) {
-                /*
-                 * Catch any IOException or JedisConnectionException occurred from InputStream#read and just
-                 * ignore. This approach is safe because reading error message is optional and connection
-                 * will eventually be closed.
-                 */
+                // 捕获InputStream＃read中发生的任何IOException或JedisConnectionException并忽略。这种方法是安全的，因为读取错误消息是可选的，并且连接最终将关闭。
             }
             // Any other exceptions related to connection?
             broken = true;
@@ -142,6 +138,9 @@ public class Connection implements Closeable {
         return socket != null && socket.isBound() && !socket.isClosed() && socket.isConnected()
                 && !socket.isInputShutdown() && !socket.isOutputShutdown();
     }
+    /**
+     * 创建一个socket连接
+     */
     public void connect() {
         if (!isConnected()) {
             try {
@@ -173,7 +172,9 @@ public class Connection implements Closeable {
         disconnect();
     }
 
-
+    /**
+     * 为了提高处理效率，write是写到缓冲区中，当缓冲区满或close时系统会自动将缓冲区的内容写入文件，所以一般是不需要调用flush的，不过如果你需要使write马上写入到文件中，就需要调用flush
+     */
     protected void flush() {
         try {
             outputStream.flush();
@@ -182,6 +183,12 @@ public class Connection implements Closeable {
             throw new JedisConnectionException(ex);
         }
     }
+
+
+
+
+
+    // 从输入流程读取redis返回的信息
 
     /**
      * 读取reids返回的状态码
@@ -198,7 +205,13 @@ public class Connection implements Closeable {
             return SafeEncoder.encode(resp);
         }
     }
+    /**
+     * 从输入流程读取redis返回的信息
+     *
+     * @return
+     */
     public String getBulkReply() {
+        // 从输入流程读取redis返回的信息
         final byte[] result = getBinaryBulkReply();
         if (null != result) {
             return SafeEncoder.encode(result);
@@ -206,6 +219,11 @@ public class Connection implements Closeable {
             return null;
         }
     }
+    /**
+     * 从输入流程读取redis返回的信息
+     *
+     * @return
+     */
     public List<String> getMultiBulkReply() {
         return BuilderFactory.STRING_LIST.build(getBinaryMultiBulkReply());
     }
@@ -218,6 +236,11 @@ public class Connection implements Closeable {
         flush();
         return (byte[]) readProtocolWithCheckingBroken();
     }
+    /**
+     * 从输入流程读取redis返回的信息
+     *
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public List<byte[]> getBinaryMultiBulkReply() {
         flush();
@@ -342,4 +365,7 @@ public class Connection implements Closeable {
         jedisSocketFactory.setSoTimeout(soTimeout);
     }
 
+    public Socket getSocket() {
+        return socket;
+    }
 }
