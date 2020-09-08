@@ -102,6 +102,12 @@ public interface MultiKeyCommands {
 
     Long publish(String channel, String message);
     void subscribe(JedisPubSub jedisPubSub, String... channels);
+    /**
+     * 订阅指定模式匹配的频道
+     *
+     * @param jedisPubSub
+     * @param patterns
+     */
     void psubscribe(JedisPubSub jedisPubSub, String... patterns);
 
 

@@ -11,31 +11,83 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 分片和非分片Jedis的通用接口，分片机制：允许数据存放在不同的机器上，对客户端透明
+ * 提供一些redis常用的命令：
  */
 public interface JedisCommands {
 
 
     // Connection 相关命令
 
+    /**
+     * > echo "Hello World"
+     *
+     * @param string
+     * @return
+     */
     String echo(String string);
 
 
     // Key（键）相关命令
 
+    /**
+     * > get name
+     *
+     * @param key
+     * @return
+     */
     String get(String key);
 
+    /**
+     * > exists 'name'
+     *
+     * @param key
+     * @return
+     */
     Boolean exists(String key);
 
+    /**
+     * > set name 'test'
+     *
+     * @param key
+     * @param value
+     * @return
+     */
     String set(String key, String value);
 
+    /**
+     * > set name 'test'
+     *
+     * SetParams 参数可以提供一些其他特性
+     *
+     * @param key
+     * @param value
+     * @param params
+     * @return
+     */
     String set(String key, String value, SetParams params);
 
+    /**
+     * > del name
+     *
+     * @param key
+     * @return
+     */
     Long del(String key);
 
+    /**
+     * > unlink name
+     *
+     * 该命令和DEL十分相似：删除指定的key(s),若key不存在则该key被跳过。但是，相比DEL，del会产生阻塞，而该命令会在另一个线程中回收内存，因此它是非阻塞的。
+     * 这也是该命令名字的由来：仅将keys从keyspace元数据中删除，真正的删除会在后续异步操作。
+     *
+     * @param key
+     * @return
+     */
     Long unlink(String key);
 
     /**
+     * > persist name
+     *
      * 移除 key 的过期时间，key 将持久保持
      *
      * @param key
@@ -44,6 +96,8 @@ public interface JedisCommands {
     Long persist(String key);
 
     /**
+     * > type name
+     *
      * 返回 key 所储存的值的类型
      *
      * @param key
@@ -60,7 +114,7 @@ public interface JedisCommands {
     byte[] dump(String key);
 
     /**
-     * restore命令将上面序列化的值进行复原，其中ttl参数代表过期时间，如果ttl=0代表没有过期时间，例如：
+     * restore命令将dump命令序列化的值进行复原，其中ttl参数代表过期时间，如果ttl=0代表没有过期时间，例如：
      * redis-target> get hello
      * (nil)
      * redis-target> restore hello 0 "\x00\x05world\x06\x00\x8f<T\x04%\xfcNQ"
@@ -69,15 +123,27 @@ public interface JedisCommands {
      * "world"
      *
      * @param key
-     * @param ttl
+     * @param ttl               过期时间，ttl=0代表没有过期时间
      * @param serializedValue
      * @return
      */
     String restore(String key, int ttl, byte[] serializedValue);
 
+    /**
+     * > restore hello 0 "\x00\x05world\x06\x00\x8f<T\x04%\xfcNQ" replace
+     *
+     * 指定restore回复键值对时，如果键已经存在，则报错，但是添加replace参数，不管键是否存在都会正常进行数据覆盖
+     *
+     * @param key
+     * @param ttl
+     * @param serializedValue
+     * @return
+     */
     String restoreReplace(String key, int ttl, byte[] serializedValue);
 
     /**
+     * > expire name 5
+     *
      * 设置过期时间
      *
      * @param key
@@ -87,6 +153,8 @@ public interface JedisCommands {
     Long expire(String key, int seconds);
 
     /**
+     * > pexpire name 5000
+     *
      * pexpire 命令和 expire 命令的作用类似，但是它以毫秒为单位设置 key 的生存时间，而不像 EXPIRE 命令那样，以秒为单位。
      *
      * @param key
@@ -96,7 +164,9 @@ public interface JedisCommands {
     Long pexpire(String key, long milliseconds);
 
     /**
-     * expireat 命令用于以 UNIX 时间戳(unix timestamp)格式设置 key 的过期时间。key 过期后将不再可用
+     * > expireat hello 1599205290
+     *
+     * expireat 命令用于以 UNIX 时间戳(unix timestamp)格式设置 key 的过期时间, 以秒计, key 过期后将不再可用
      *
      * @param key
      * @param unixTime
@@ -105,7 +175,9 @@ public interface JedisCommands {
     Long expireAt(String key, long unixTime);
 
     /**
-     * Redis PEXPIREAT 命令用于设置 key 的过期时间，以毫秒计。key 过期后将不再可用
+     * > expireat hello 1599205290000
+     *
+     * Redis PEXPIREAT 命令用于设置 key 的过期时间，以毫秒计, key 过期后将不再可用
      *
      * @param key
      * @param millisecondsTimestamp
@@ -114,6 +186,8 @@ public interface JedisCommands {
     Long pexpireAt(String key, long millisecondsTimestamp);
 
     /**
+     * > ttl hello
+     *
      * 以秒为单位，返回给定 key 的剩余生存时间(TTL, time to live)
      *
      * @param key
@@ -122,6 +196,8 @@ public interface JedisCommands {
     Long ttl(String key);
 
     /**
+     * > pttl hello
+     *
      * 以毫秒为单位返回 key 的剩余的过期时间
      *
      * @param key
@@ -130,6 +206,8 @@ public interface JedisCommands {
     Long pttl(String key);
 
     /**
+     * > touch hello
+     *
      * 修改某一个或多个key的最后访问时间，如果key不存在，则忽略
      *
      * @param key
@@ -137,16 +215,58 @@ public interface JedisCommands {
      */
     Long touch(String key);
 
+    /**
+     *
+     * 假设 today_cost 是一个保存数字的列表， SORT 命令默认会返回该列表值的递增(从小到大)排序结果。
+     *
+     * # 将数据一一加入到列表中
+     * redis> LPUSH today_cost 30
+     * (integer) 1
+     *
+     * redis> LPUSH today_cost 1.5
+     * (integer) 2
+     *
+     * redis> LPUSH today_cost 10
+     * (integer) 3
+     *
+     * redis> LPUSH today_cost 8
+     * (integer) 4
+     *
+     * redis> SORT today_cost
+     * 1) "1.5"
+     * 2) "8"
+     * 3) "10"
+     * 4) "30"
+     *
+     * @param key
+     * @return
+     */
     List<String> sort(String key);
 
+    /**
+     * sortingParameters 提供一些排序的特性，例如：升序/降序、limit、等功能
+     *
+     * @param key
+     * @param sortingParameters
+     * @return
+     */
     List<String> sort(String key, SortingParams sortingParameters);
 
+    /**
+     * 将key剪切到指定索引的redis库，如果目标库已经存在该key，则返回0，表示剪切失败
+     *
+     * @param key
+     * @param dbIndex
+     * @return
+     */
     Long move(String key, int dbIndex);
 
 
     // String（字符串）
 
     /**
+     * > append name ' is my lover'
+     *
      * Redis Append 命令用于为指定的 key 追加值。
      * 如果 key 已经存在并且是一个字符串， APPEND 命令将 value 追加到 key 原来的值的末尾。
      * 如果 key 不存在， APPEND 就简单地将给定 key 设为 value ，就像执行 SET key value 一样。
@@ -158,6 +278,8 @@ public interface JedisCommands {
     Long append(String key, String value);
 
     /**
+     * > substr name 0 3
+     *
      * 截取字符串
      *
      * @param key
@@ -167,17 +289,29 @@ public interface JedisCommands {
      */
     String substr(String key, int start, int end);
 
+    /**
+     * > strlen name
+     *
+     * @param key
+     * @return
+     */
     Long strlen(String key);
 
     /**
-     * 我们在登陆某些博客网站或者视频网站的时候，网站往往会记录我们是否阅读了某篇文章，或者是观看了某个视频。如果用传统的mysql数据库实现，如果用户数量多，文章和视频也多的情况下，那么则会给数据库带来很大的压力。而用Redis的GETBIT和SETBIT则会简单得多。我们以视频为例，我们用bitmap来记录用户们是否已经观看了某一个视频，一个视频对应一个bitmap。例如
-     * <p>
+     * > setbit key1 0 1
+     *
+     * 该命令适合一些打标的场景：
+     *
+     * 我们在登陆某些博客网站或者视频网站的时候，网站往往会记录我们是否阅读了某篇文章，或者是观看了某个视频。如果用传统的mysql数据库实现，
+     * 如果用户数量多，文章和视频也多的情况下，那么则会给数据库带来很大的压力。而用Redis的GETBIT和SETBIT则会简单得多。我们以视频为例，
+     * 我们用bitmap来记录用户们是否已经观看了某一个视频，一个视频对应一个bitmap。例如
+     *
      * key:   video:1201
      * value: 000000...0000
      * key以视频英文名video+冒号+id标记。
      * value就是一个bitmap。一位(bit)有两种可能，0或者1。0代表未看，1代表已经看过了。
      * 而位置(offset)代表的就是user id。例如第200位就代表user_id为200的用户是否观看过id为1201的视频。
-     * <p>
+     *
      * 设置：SETBIT video:1201 200 1
      * 上面的命令就是设置ID为200的用户，已经看过了ID为1201的视频。
      * 查询：GETBIT video:1201 200
@@ -191,31 +325,74 @@ public interface JedisCommands {
      */
     Boolean setbit(String key, long offset, boolean value);
 
+    /**
+     * 同{@link #setbit(String, long, boolean)}，这里的入参value只支持0或1
+     *
+     * @param key
+     * @param offset
+     * @param value
+     * @return
+     */
     Boolean setbit(String key, long offset, String value);
 
+    /**
+     * 获取指定键对应偏移量上的值，0或者1，这里返回false或者true
+     *
+     * @param key
+     * @param offset
+     * @return
+     */
     Boolean getbit(String key, long offset);
 
     /**
-     * 设置或者清空key的value(字符串)在offset处的bit值。
-     * <p>
-     * 那个位置的bit要么被设置，要么被清空，这个由value（只能是0或者1）来决定。当key不存在的时候，就创建一个新的字符串value。要确保这个字符串大到在offset处有bit值。
-     * <p>
-     * offset 表示bit的位置数，从0开始计，1字节的bit数组最大为7 。
+     * 统计key对应的bit值中，包含的1的数量，例如：
+     *
+     * 127.0.0.1:6379> set testKey "a"
+     * OK
+     * 127.0.0.1:6379> set testKey1 "c"
+     * OK
+     * 127.0.0.1:6379> bitcount testKey
+     * (integer) 3
+     * 127.0.0.1:6379> bitcount testKey1
+     * (integer) 4
+     *
+     * 这里a对应的ASCII值为97（二进制：01100001），所以 bitcount命令返回包含1的个数是3
+     * 这里c对应的ASCII值为99（二进制：01100011），所以 bitcount命令返回包含1的个数是4
      *
      * @param key
      * @return
      */
     Long bitcount(String key);
 
+    /**
+     * bitcount命令：
+     * 语法：bitcount key [start] [end]
+     * 计算给定字符串中,被甚至为1的比特位的数量。
+     * 默认情况下,给定的整个字符串都会被进行计数,可以通过start、end指定区间中指定计数操作
+     * start和end可以包含负值,以便从字符串末尾开始索引字节,其中-1是最后一个字节,以此类推
+     * 不存在的键被视为空字符串,返回0
+     * 返回值：
+     * 被设置为1的位的数量。
+     * 举例：
+     * set m "ab"      0110000101100010
+     * bitcount m      返回6
+     * bitcount m 0 0  也就是a 返回3
+     * bitcount m 1 1  也就是b 返回3
+     *
+     * @param key
+     * @param start
+     * @param end
+     * @return
+     */
     Long bitcount(String key, long start, long end);
 
     /**
      * 用指定的字符串覆盖给定 key 所储存的字符串值，覆盖的位置从偏移量 offset 开始：
-     * redis 127.0.0.1:6379> SET key1 "Hello World"
+     * redis 127.0.0.1:6379> set key1 "Hello World"
      * OK
-     * redis 127.0.0.1:6379> SETRANGE key1 6 "Redis"
+     * redis 127.0.0.1:6379> setrange key1 6 "Redis"
      * (integer) 11
-     * redis 127.0.0.1:6379> GET key1
+     * redis 127.0.0.1:6379> get key1
      * "Hello Redis"
      *
      * @param key
@@ -314,25 +491,22 @@ public interface JedisCommands {
     String psetex(String key, long milliseconds, String value);
 
     /**
-     * Redis Decrby 命令将 key 所储存的值减去指定的减量值。
-     * 如果 key 不存在，那么 key 的值会先被初始化为 0 ，然后再执行 DECRBY 操作。
-     * 如果值包含错误的类型，或字符串类型的值不能表示为数字，那么返回一个错误。
-     * 本操作的值限制在 64 位(bit)有符号数字表示之内。
-     * <p>
+     * Redis Decrby 命令将 key 所储存的值减去指定的减量值，如果key不存在，那么 key 的值会先被初始化为 0 ，然后再执行 DECRBY 操作。
+     * 如果值包含错误的类型，或字符串类型的值不能表示为数字，那么返回一个错误，本操作的值限制在 64 位(bit)有符号数字表示之内。
+     *
      * # 对已存在的 key 进行 DECRBY
-     * <p>
+     *
      * redis> SET count 100
      * OK
-     * <p>
+     *
      * redis> DECRBY count 20
      * (integer) 80
-     * <p>
-     * <p>
+     *
      * # 对不存在的 key 进行DECRBY
-     * <p>
+     *
      * redis> EXISTS pages
      * (integer) 0
-     * <p>
+     *
      * redis> DECRBY pages 10
      * (integer) -10
      *
@@ -343,36 +517,29 @@ public interface JedisCommands {
     Long decrBy(String key, long decrement);
 
     /**
-     * Redis Decr 命令将 key 中储存的数字值减一。
-     * 如果 key 不存在，那么 key 的值会先被初始化为 0 ，然后再执行 DECR 操作。
-     * 如果值包含错误的类型，或字符串类型的值不能表示为数字，那么返回一个错误。
-     * 本操作的值限制在 64 位(bit)有符号数字表示之内。
-     * <p>
-     * <p>
-     * <p>
+     * Redis Decr 命令将key中储存的数字值减一，如果key不存在，那么key的值会先被初始化为0，然后再执行 DECR 操作。
+     * 如果值包含错误的类型，或字符串类型的值不能表示为数字，那么返回一个错误，本操作的值限制在 64 位(bit)有符号数字表示之内。
+     *
      * # 对存在的数字值 key 进行 DECR
-     * <p>
      * redis> SET failure_times 10
      * OK
-     * <p>
+     *
      * redis> DECR failure_times
      * (integer) 9
-     * <p>
-     * <p>
+     *
      * # 对不存在的 key 值进行 DECR
-     * <p>
+     *
      * redis> EXISTS count
      * (integer) 0
-     * <p>
+     *
      * redis> DECR count
      * (integer) -1
-     * <p>
-     * <p>
+     *
      * # 对存在但不是数值的 key 进行 DECR
-     * <p>
+     *
      * redis> SET company YOUR_CODE_SUCKS.LLC
      * OK
-     * <p>
+     *
      * redis> DECR company
      * (error) ERR value is not an integer or out of range
      *
@@ -381,24 +548,43 @@ public interface JedisCommands {
      */
     Long decr(String key);
 
-    Long incrBy(String key, long increment);
-
-    Double incrByFloat(String key, double increment);
-
-    Long incr(String key);
-
     /**
-     * Used for HSTRLEN Redis command
-     * Redis Strlen 命令用于获取指定 key 所储存的字符串值的长度。当 key 储存的不是字符串值时，返回一个错误。
+     * 给指定key的value加上对应的数值
      *
      * @param key
-     * @param field
-     * @return length of the value for key
+     * @param increment
+     * @return
      */
-    Long hstrlen(String key, String field);
+    Long incrBy(String key, long increment);
+
+    /**
+     * 给指定key的value加上对应的数值
+     *
+     * @param key
+     * @param increment
+     * @return
+     */
+    Double incrByFloat(String key, double increment);
+
+    /**
+     * 对于给定key的value进行自增+1
+     *
+     * @param key
+     * @return
+     */
+    Long incr(String key);
 
     /***
-     * 用来获取二进制位串中第一个1或者0的位置
+     * 用来获取二进制位串中第一个1或者0的位置，例如：
+     * 127.0.0.1:6379> set key_0 0
+     * OK
+     * 127.0.0.1:6379> bitpos key_0 1
+     * (integer) 2
+     * 127.0.0.1:6379> bitpos key_0 0
+     * (integer) 0
+     *
+     * 0对应的ASCII二进制码为：00110000
+     *
      *
      * @param key
      * @param value
@@ -406,27 +592,36 @@ public interface JedisCommands {
      */
     Long bitpos(String key, boolean value);
 
-    Long bitpos(String key, boolean value, BitPosParams params);
-
     /**
-     * Executes BITFIELD Redis command
+     * 127.0.0.1:6379> set key_a0 'a0'
+     * OK
+     * 127.0.0.1:6379> bitpos key_a0 1 1
+     * (integer) 10
+     *
+     * 'a0'对应的ASCII码为：01100001 00110000
+     * bitpos key_a0 1 1 命令表示从第二个子节点开始计算，第一个bit值为1的索引位置
      *
      * @param key
-     * @param arguments
+     * @param value
+     * @param params
      * @return
      */
-    List<Long> bitfield(String key, String... arguments);
+    Long bitpos(String key, boolean value, BitPosParams params);
 
+    // TODO whz 比较复杂
+    List<Long> bitfield(String key, String... arguments);
     List<Long> bitfieldReadonly(String key, String... arguments);
 
 
     // Hash（哈希表）
 
     /**
-     * HSET key field value
-     * 将哈希表 key 中的域 field 的值设为 value 。
-     * 如果 key 不存在，一个新的哈希表被创建并进行 HSET 操作。
-     * 如果域 field 已经存在于哈希表中，旧值将被覆盖。
+     * 127.0.0.1:6379> hset user_1 name zhangsan
+     * (integer) 1
+     * 127.0.0.1:6379> hset user_1 age 24
+     * (integer) 1
+     *
+     * 将哈希表key中的域field的值设为value：如果 key 不存在，一个新的哈希表被创建并进行 HSET 操作，如果域 field 已经存在于哈希表中，旧值将被覆盖。
      *
      * @param key
      * @param field
@@ -435,39 +630,251 @@ public interface JedisCommands {
      */
     Long hset(String key, String field, String value);
 
+    /**
+     * 同hset批量设置
+     *
+     * @param key
+     * @param hash
+     * @return
+     */
     Long hset(String key, Map<String, String> hash);
 
+    /**
+     * 127.0.0.1:6379> hset user_1 name zhangsan
+     * (integer) 1
+     * 127.0.0.1:6379> hget user_1 name
+     * "zhangsan"
+     *
+     * @param key
+     * @param field
+     * @return
+     */
     String hget(String key, String field);
 
+    /**
+     * 仅在对应field没有值时，set生效:
+     * 127.0.0.1:6379> hset user_1 name zhangsan
+     * (integer) 0
+     * 127.0.0.1:6379> hsetnx user_1 name lisi
+     * (integer) 0
+     * 127.0.0.1:6379> hsetnx user_1 sex 1
+     * (integer) 1
+     * 127.0.0.1:6379> hget user_1 name
+     * "zhangsan"
+     * 127.0.0.1:6379> hget user_1 sex
+     * "1"
+     *
+     * @param key
+     * @param field
+     * @param value
+     * @return
+     */
     Long hsetnx(String key, String field, String value);
 
+    /**
+     * 在Redis使用过程中，发现Redis hash的两个指令HSET和HMSET非常类似，搜索了一下，差别在于：HSET/HMSET将单个/多个field - value(域-值)对设置到哈希表key中，然而在使用时HSET也可以做到。
+     * 127.0.0.1:6379[1]> hset people name Sam age 28 sex male
+     * (integer) 3
+     * 127.0.0.1:6379[1]> hmset people1 name Anny age 27 sex female
+     * OK
+     *
+     * 结果并没有什么差异：
+     * 127.0.0.1:6379[1]> hgetall people
+     * 1) "name"
+     * 2) "Sam"
+     * 3) "age"
+     * 4) "28"
+     * 5) "sex"
+     * 6) "male"
+     * 127.0.0.1:6379[1]> hgetall people1
+     * 1) "name"
+     * 2) "Anny"
+     * 3) "age"
+     * 4) "27"
+     * 5) "sex"
+     * 6) "female"
+     *
+     * 后来在官方文档中发现：根据Redis 4.0.0，HMSET被视为已弃用。请在新代码中使用HSET，在这之前HSET只能设置单个键值对，同时设置多个时必须使用HMSET。而现在HSET也允许接受多个键值对作参数了。
+     *
+     *
+     * @param key
+     * @param hash
+     * @return
+     */
     String hmset(String key, Map<String, String> hash);
 
+    /**
+     * 批量获取多个field的值
+     *
+     * @param key
+     * @param fields
+     * @return
+     */
     List<String> hmget(String key, String... fields);
 
+    /**
+     * 获取指定field的字符串长度
+     *
+     * @param key
+     * @param field
+     * @return length of the value for key
+     */
+    Long hstrlen(String key, String field);
+
+    /**
+     * 给对应的field的值加上对应的数值
+     *
+     * @param key
+     * @param field
+     * @param value
+     * @return
+     */
     Long hincrBy(String key, String field, long value);
 
+    /**
+     * 同hincrBy
+     *
+     * @param key
+     * @param field
+     * @param value
+     * @return
+     */
     Double hincrByFloat(String key, String field, double value);
 
+    /**
+     * 判断给定的field是否存在
+     *
+     * @param key
+     * @param field
+     * @return
+     */
     Boolean hexists(String key, String field);
 
+    /**
+     * 删除给定的field
+     *
+     * @param key
+     * @param field
+     * @return
+     */
     Long hdel(String key, String... field);
 
+    /**
+     * 127.0.0.1:6379> hset people name Sam age 28 sex male
+     * (integer) 3
+     * 127.0.0.1:6379> hgetall people
+     * 1) "name"
+     * 2) "Sam"
+     * 3) "age"
+     * 4) "28"
+     * 5) "sex"
+     * 6) "male"
+     * 127.0.0.1:6379> hlen people
+     * (integer) 3
+     *
+     * 获取key下的field的个数
+     *
+     * @param key
+     * @return
+     */
     Long hlen(String key);
 
+    /**
+     * 127.0.0.1:6379> hkeys people
+     * 1) "name"
+     * 2) "age"
+     * 3) "sex"
+     *
+     * 获取指定key下的field
+     *
+     * @param key
+     * @return
+     */
     Set<String> hkeys(String key);
 
+    /**
+     * 127.0.0.1:6379> hvals people
+     * 1) "Sam"
+     * 2) "28"
+     * 3) "male"
+     *
+     * 获取指定key下的field字段值
+     *
+     * @param key
+     * @return
+     */
     List<String> hvals(String key);
 
+    /**
+     * 127.0.0.1:6379> hgetall people
+     * 1) "name"
+     * 2) "Sam"
+     * 3) "age"
+     * 4) "28"
+     * 5) "sex"
+     * 6) "male"
+     *
+     * 获取key下的所有field的键值对
+     *
+     * @param key
+     * @return
+     */
     Map<String, String> hgetAll(String key);
 
+    /**
+     * 当我们需要遍历Redis所有key或者指定模式的key时，首先想到的是KEYS命令，但是如果redis数据非常大，并且key也非常多的情况下，
+     * 查询的时候很可能会很慢，造成整个redis阻塞，那么有什么办法解决呢？
+     * 当然有了，今天就简单的介绍一下，如：scan和hscan
+     *
+     * 格式如下：
+     *
+     * SCAN cursor [MATCH pattern] [COUNT count]
+     * HSCAN key cursor [MATCH pattern] [COUNT count]
+     *
+     * SCAN命令是一个基于游标的迭代器, 这意味着命令每次被调用都需要使用上一次这个调用返回的游标作为该次调用的游标参数，以此来延续之前的迭
+     * 代过程, 当SCAN命令的游标参数被设置为 0 时， 服务器将开始一次新的迭代， 而当服务器向用户返回值为 0 的游标时， 表示迭代已结束，HSCAN同SCAN命令相同。
+     *
+     * 1，查看一下hash有多少条记录
+     * 127.0.0.1:6379[1]> hgetall pms:1
+     *  1) "stock"
+     *  2) "12"
+     *  3) "freeze"
+     *  4) "10"
+     *  5) "stock:1"
+     *  6) "11"
+     *  7) "stock:2"
+     *  8) "23"
+     *  9) "stock:freeze:1"
+     * 10) "111"
+     * 11) "stock:5"
+     * 12) "1212"
+     *
+     * 2，模糊查看pms:1下的键
+     * 127.0.0.1:6379[1]> hscan pms:1 0 match stock:* count 3
+     * 1) "0"
+     * 2) 1) "stock:1"
+     *    2) "11"
+     *    3) "stock:2"
+     *    4) "23"
+     *
+     *
+     * @param key
+     * @param cursor
+     * @return
+     */
     ScanResult<Map.Entry<String, String>> hscan(String key, String cursor);
-
     ScanResult<Map.Entry<String, String>> hscan(String key, String cursor, ScanParams params);
 
 
     // List（列表）
 
+    /**
+     *
+     *
+     * @param key
+     * @param string
+     * @return
+     */
     Long rpush(String key, String... string);
 
     Long lpush(String key, String... string);

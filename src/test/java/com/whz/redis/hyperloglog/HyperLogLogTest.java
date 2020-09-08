@@ -1,4 +1,4 @@
-package hyperloglog;
+package com.whz.redis.hyperloglog;
 
 import org.junit.Before;
 import org.junit.Test;

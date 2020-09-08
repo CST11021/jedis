@@ -1,10 +1,10 @@
-package pubsub;
+package com.whz.redis;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
-public final class RedisUtils {
+public final class RedisClientUtil {
 
     private static JedisPool jedisPool = null;
 
@@ -13,11 +13,11 @@ public final class RedisUtils {
     private static Integer timeout = 5 * 1000;
     private static String password = null;
 
-    private RedisUtils() {
+    private RedisClientUtil() {
 
     }
 
-    static synchronized Jedis getJedis() {
+    public static synchronized Jedis getJedis() {
         if (jedisPool == null) {
             JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
             //指定连接池中最大空闲连接数

@@ -1,3 +1,7 @@
+package com.whz.redis.commands;
+
+import com.whz.redis.RedisClientUtil;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import redis.clients.jedis.Jedis;
@@ -9,21 +13,70 @@ import java.util.Map;
 
 public class TestRedis {
 
-    private Jedis jedis;
+    private Jedis jedis = RedisClientUtil.getJedis();
 
-    @Before
-    public void setup() {
-        // 连接redis服务器，192.168.0.100:6379
-        jedis = new Jedis("localhost", 6379);
-        // 权限认证
-        // jedis.auth("admin");
+    // @Before
+    // public void setup() {
+    //     // 连接redis服务器，192.168.0.100:6379
+    //     jedis = new Jedis("localhost", 6379);
+    //     // 权限认证
+    //     // jedis.auth("admin");
+    // }
+
+    /**
+     * ping
+     */
+    @Test
+    public void testPing() {
+
+        // ping
+        String result = jedis.ping();
+        Assert.assertEquals(result, "PONG");
+
+        // ping test123
+        String result1 = jedis.ping("test123");
+        Assert.assertEquals(result1, "test123");
+
     }
 
     @Test
-    public void pingTest() {
-        String result = jedis.ping();
-        System.out.println(result);
+    public void testGetDb() {
+        Assert.assertEquals(jedis.getDB(), 0);
+    }
 
+    @Test
+    public void testInfo() {
+        String info = jedis.info();
+        String info0 = jedis.info("all");
+        String info1 = jedis.info("server");
+        String info2 = jedis.info("cpu");
+
+        System.out.println();
+    }
+
+    @Test
+    public void testSetbit() {
+
+        jedis.setbit("setbitkey1", 0, true);
+        jedis.setbit("setbitkey1", 1, false);
+        Assert.assertEquals( true, jedis.getbit("setbitkey1", 0));
+        Assert.assertEquals( false, jedis.getbit("setbitkey1", 1));
+
+        jedis.setbit("setbitkey2", 0, "1");
+        jedis.setbit("setbitkey2", 1, "0");
+        Assert.assertEquals( true, jedis.getbit("setbitkey2", 0));
+        Assert.assertEquals( false, jedis.getbit("setbitkey2", 1));
+
+        Assert.assertEquals("string", jedis.type("setbitkey1"));
+        Assert.assertEquals("string", jedis.type("setbitkey2"));
+
+    }
+
+    @Test
+    public void testBitcount() {
+        jedis.set("key_a", "a");// 01100001
+        long count = jedis.bitcount("key_a");
+        Assert.assertEquals(3L, count);
     }
 
     /**
@@ -31,15 +84,22 @@ public class TestRedis {
      */
     @Test
     public void testString() {
-        //-----添加数据----------
-        jedis.set("name", "xinxin");//向key-->name中放入了value-->xinxin
-        System.out.println(jedis.get("name"));//执行结果：xinxin
+        // set值：set name "xinxin"
+        jedis.set("name", "xinxin");
 
-        jedis.append("name", " is my lover"); //拼接
-        System.out.println(jedis.get("name"));
+        // 字符串拼接：append name " is my lover"
+        jedis.append("name", " is my lover");
 
-        jedis.del("name"); //删除某个键
-        System.out.println(jedis.get("name"));
+        // get name
+        Assert.assertEquals(jedis.get("name"), "xinxin is my lover");
+
+        // mget name test
+        List<String> result = jedis.mget(new String[] {"name", "test"});
+        Assert.assertEquals(result.get(0), "xinxin is my lover");
+        Assert.assertEquals(result.get(1), null);
+
+        // del name
+        jedis.del("name");
 
     }
 

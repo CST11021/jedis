@@ -129,7 +129,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
     }
 
     /**
-     * Works same as <tt>ping()</tt> but returns argument message instead of <tt>PONG</tt>.
+     * 与ping()相同，但返回参数消息而不是PONG，而是message
      *
      * @param message
      * @return message
@@ -168,8 +168,8 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
      * @param key
      * @param value
      * @param params    NX|XX：
-     *                      NX：有此参数时只能 set 不存在的key, 如果给已经存在的key set 值则不生效
-     *                      XX：此参数只能设置已经存在的key 的值，不存在的不生效
+     *                      NX：使用此参数时只能 set 不存在的key, 如果给已经存在的key set 值则不生效
+     *                      XX：使用此参数时只能设置已经存在的key 的值，不存在的不生效
      * 		            EX|PX：key 的存在时间: EX = seconds; PX = milliseconds
      *
      * @return Status code reply
@@ -195,8 +195,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         return client.getBulkReply();
     }
     /**
-     * SETNX的工作方式与{@link #set(String, String)} 完全相同，唯一的区别是，如果密钥已经存在，则不执行任何操作。 SETNX的实际含义是“ SET if Not exists”。
-     * <p>
+     * SETNX的工作方式与{@link #set(String, String)} 完全相同，唯一的区别是，如果key已经存在，则不执行任何操作。 SETNX的实际含义是“ SET if Not exists”。
      * Time complexity: O(1)
      *
      * @param key
@@ -3703,7 +3702,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
     // 发布订阅相关接口
 
     /**
-     * 订阅频道
+     * 订阅指定的频道
      *
      * @param jedisPubSub
      * @param channels
@@ -3730,6 +3729,12 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
         client.publish(channel, message);
         return client.getIntegerReply();
     }
+    /**
+     * 订阅指定模式匹配的频道
+     *
+     * @param jedisPubSub
+     * @param patterns
+     */
     @Override
     public void psubscribe(final JedisPubSub jedisPubSub, final String... patterns) {
         checkIsInMultiOrPipeline();

@@ -52,11 +52,15 @@
 	</properties>
 
 	<dependencies>
+
+		<!--日志相关包-->
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>1.7.30</version>
 		</dependency>
+
+		<!--org.apache.commons-->
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-pool2</artifactId>
@@ -65,6 +69,7 @@
 			<scope>compile</scope>
 		</dependency>
 
+		<!--测试-->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>

@@ -3,11 +3,22 @@ package redis.clients.jedis.commands;
 import redis.clients.jedis.DebugParams;
 
 /**
- * 基础命令：用于操作 Redis DB 相关的函数
+ * 基础命令：用于操作 Redis DB 相关的函数，常用的命令例如：
+ * > ping
+ * > auth 123456
+ * > quit
+ * > flushdb
+ * > flushall
+ * > dbsize
+ * > select 0
+ * > info
+ *
  */
 public interface BasicCommands {
 
     /**
+     * > ping
+     *
      * 该命令通常用于测试连接是否仍处于活动状态或测量延迟
      *
      * @return PONG
@@ -15,6 +26,8 @@ public interface BasicCommands {
     String ping();
 
     /**
+     * > auth 123456
+     *
      * 在受密码保护的Redis服务器中请求身份验证。
      * 可以指示Redis在允许客户端执行命令之前要求输入密码。
      * 这是使用配置文件中的requirepass指令完成的。
@@ -27,6 +40,8 @@ public interface BasicCommands {
     String auth(String password);
 
     /**
+     * > auth root 123456
+     *
      * Request for authentication with username and password, based on the  ACL feature introduced in Redis 6.0
      * see https://redis.io/topics/acl
      *
@@ -37,7 +52,9 @@ public interface BasicCommands {
     String auth(String user, String password);
 
     /**
-     * Ask the server to close the connection. The connection is closed as soon as all pending replies have been written to the client.
+     * > quit
+     *
+     * 要求服务器关闭连接。一旦所有待处理的回复都已写入客户端，连接即被关闭
      *
      * @return OK
      */
@@ -45,6 +62,8 @@ public interface BasicCommands {
 
 
     /**
+     * > flushdb
+     *
      * 删除当前所选数据库的所有键, 此命令永远不会失败, 此操作的时间复杂度为O(N), N为数据库中键的数量
      *
      * @return OK
@@ -52,6 +71,8 @@ public interface BasicCommands {
     String flushDB();
 
     /**
+     * > flushall
+     *
      * 删除所有现有数据库的所有键，而不仅仅是当前选择的一个
      *
      * @return a simple string reply (OK)
@@ -59,6 +80,8 @@ public interface BasicCommands {
     String flushAll();
 
     /**
+     * > dbsize
+     *
      * 返回当前所选数据库中的键数。
      *
      * @return the number of key in the currently-selected database.
@@ -66,7 +89,9 @@ public interface BasicCommands {
     Long dbSize();
 
     /**
-     * 选择具有指定的从零开始的数字索引的DB。
+     * > select 0
+     *
+     * 切换数据库：选择具有指定的从零开始的数字索引的DB。
      *
      * @param index the index
      * @return a simple string reply OK
@@ -74,6 +99,8 @@ public interface BasicCommands {
     String select(int index);
 
     /**
+     * > swapdb 0 1
+     *
      * 此命令交换两个Redis数据库，以便立即连接到给定数据库的所有客户端将看到另一个数据库的数据，反之亦然。
      *
      * @param index1
@@ -83,7 +110,10 @@ public interface BasicCommands {
     String swapDB(int index1, int index2);
 
 
+
     /**
+     * > save
+     *
      * SAVE命令执行数据集的同步保存，以RDB文件的形式生成Redis实例内所有数据的时间点快照。
      * 您几乎从不希望在生产环境中调用SAVE，因为它将阻止所有其他客户端，相反，通常使用BGSAVE。
      * 但是，如果遇到阻止Redis创建后台保存子项的问题（例如fork（2）系统调用中的错误），SAVE命令可能是执行最新数据集转储的最后选择。
@@ -93,6 +123,8 @@ public interface BasicCommands {
     String save();
 
     /**
+     * > bgsave
+     *
      * 将数据库保存在后台。 The OK code is immediately returned. Redis forks, the parent continues to serve the clients,
      * the child saves the DB on disk then exits. A client may be able to check if the operation succeeded using the LASTSAVE command.
      *
@@ -127,6 +159,8 @@ public interface BasicCommands {
     String shutdown();
 
     /**
+     * > info
+     *
      * INFO命令以一种易于计算机解析和易于阅读的格式返回有关服务器的信息和统计信息。
      *
      * @return information on the server
@@ -134,9 +168,22 @@ public interface BasicCommands {
     String info();
 
     /**
-     * INFO命令以一种易于计算机解析和易于阅读的格式返回有关服务器的信息和统计信息。
+     * > info ${section}
      *
-     * @param section (all: Return all sections, default: Return only the default set of sections, server: General information about the Redis server, clients: Client connections section, memory: Memory consumption related information, persistence: RDB and AOF related information, stats: General statistics, replication: Master/slave replication information, cpu: CPU consumption statistics, commandstats: Redis command statistics, cluster: Redis Cluster section, keyspace: Database related statistics)
+     * 可选值${section}包括：all、default、server、clients 等等
+     *
+     * @param section all: Return all sections,
+     *                default: Return only the default set of sections,
+     *                server: General information about the Redis server,
+     *                clients: Client connections section,
+     *                memory: Memory consumption related information,
+     *                persistence: RDB and AOF related information,
+     *                stats: General statistics,
+     *                replication: Master/slave replication information,
+     *                cpu: CPU consumption statistics,
+     *                commandstats: Redis command statistics,
+     *                cluster:  Redis Cluster section,
+     *                keyspace: Database related statistics
      * @return
      */
     String info(String section);
@@ -159,7 +206,8 @@ public interface BasicCommands {
     String slaveofNoOne();
 
     /**
-     * 返回当前数据库的索引
+     * 返回当前数据库的索引，redis的数据库个数是可以配置的，默认为16个，配置文件（redis.conf）的databases 16。
+     * 对应数据库的索引值为0 - (databases -1)，即16个数据库，索引值为0-15。默认存储的数据库为0。
      *
      * @return the int of the index database.
      */

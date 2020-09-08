@@ -146,7 +146,7 @@ public class BinaryJedis implements BasicCommands, BinaryJedisCommands, MultiKey
 
 
 
-
+    // ping
 
     @Override
     public String ping() {
