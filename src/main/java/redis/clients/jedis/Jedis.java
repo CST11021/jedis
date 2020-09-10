@@ -1216,7 +1216,10 @@ public class Jedis extends BinaryJedis implements BasicCommands, JedisCommands, 
         checkIsInMultiOrPipeline();
         client.spop(key, count);
         final List<String> members = client.getMultiBulkReply();
-        if (members == null) return null;
+        if (members == null) {
+            return null;
+        }
+
         return SetFromList.of(members);
     }
     /**
@@ -2834,8 +2837,9 @@ public class Jedis extends BinaryJedis implements BasicCommands, JedisCommands, 
         List<Long> result = client.getIntegerMultiBulkReply();
         List<Boolean> exists = new ArrayList<>();
 
-        for (Long value : result)
+        for (Long value : result) {
             exists.add(value == 1);
+        }
 
         return exists;
     }
@@ -2907,168 +2911,6 @@ public class Jedis extends BinaryJedis implements BasicCommands, JedisCommands, 
         checkIsInMultiOrPipeline();
         client.bitop(op, destKey, srcKeys);
         return client.getIntegerReply();
-    }
-
-    /**
-     * <pre>
-     * redis 127.0.0.1:26381&gt; sentinel masters
-     * 1)  1) "name"
-     *     2) "mymaster"
-     *     3) "ip"
-     *     4) "127.0.0.1"
-     *     5) "port"
-     *     6) "6379"
-     *     7) "runid"
-     *     8) "93d4d4e6e9c06d0eea36e27f31924ac26576081d"
-     *     9) "flags"
-     *    10) "master"
-     *    11) "pending-commands"
-     *    12) "0"
-     *    13) "last-ok-ping-reply"
-     *    14) "423"
-     *    15) "last-ping-reply"
-     *    16) "423"
-     *    17) "info-refresh"
-     *    18) "6107"
-     *    19) "num-slaves"
-     *    20) "1"
-     *    21) "num-other-sentinels"
-     *    22) "2"
-     *    23) "quorum"
-     *    24) "2"
-     *
-     * </pre>
-     *
-     * @return
-     */
-    @Override
-    @SuppressWarnings("rawtypes")
-    public List<Map<String, String>> sentinelMasters() {
-        client.sentinel(Protocol.SENTINEL_MASTERS);
-        final List<Object> reply = client.getObjectMultiBulkReply();
-
-        final List<Map<String, String>> masters = new ArrayList<>();
-        for (Object obj : reply) {
-            masters.add(BuilderFactory.STRING_MAP.build((List) obj));
-        }
-        return masters;
-    }
-
-    /**
-     * <pre>
-     * redis 127.0.0.1:26381&gt; sentinel get-master-addr-by-name mymaster
-     * 1) "127.0.0.1"
-     * 2) "6379"
-     * </pre>
-     *
-     * @param masterName
-     * @return two elements list of strings : host and port.
-     */
-    @Override
-    public List<String> sentinelGetMasterAddrByName(final String masterName) {
-        client.sentinel(Protocol.SENTINEL_GET_MASTER_ADDR_BY_NAME, masterName);
-        final List<Object> reply = client.getObjectMultiBulkReply();
-        return BuilderFactory.STRING_LIST.build(reply);
-    }
-
-    /**
-     * <pre>
-     * redis 127.0.0.1:26381&gt; sentinel reset mymaster
-     * (integer) 1
-     * </pre>
-     *
-     * @param pattern
-     * @return
-     */
-    @Override
-    public Long sentinelReset(final String pattern) {
-        client.sentinel(Protocol.SENTINEL_RESET, pattern);
-        return client.getIntegerReply();
-    }
-
-    /**
-     * <pre>
-     * redis 127.0.0.1:26381&gt; sentinel slaves mymaster
-     * 1)  1) "name"
-     *     2) "127.0.0.1:6380"
-     *     3) "ip"
-     *     4) "127.0.0.1"
-     *     5) "port"
-     *     6) "6380"
-     *     7) "runid"
-     *     8) "d7f6c0ca7572df9d2f33713df0dbf8c72da7c039"
-     *     9) "flags"
-     *    10) "slave"
-     *    11) "pending-commands"
-     *    12) "0"
-     *    13) "last-ok-ping-reply"
-     *    14) "47"
-     *    15) "last-ping-reply"
-     *    16) "47"
-     *    17) "info-refresh"
-     *    18) "657"
-     *    19) "master-link-down-time"
-     *    20) "0"
-     *    21) "master-link-status"
-     *    22) "ok"
-     *    23) "master-host"
-     *    24) "localhost"
-     *    25) "master-port"
-     *    26) "6379"
-     *    27) "slave-priority"
-     *    28) "100"
-     * </pre>
-     *
-     * @param masterName
-     * @return
-     */
-    @Override
-    @SuppressWarnings("rawtypes")
-    public List<Map<String, String>> sentinelSlaves(final String masterName) {
-        client.sentinel(Protocol.SENTINEL_SLAVES, masterName);
-        final List<Object> reply = client.getObjectMultiBulkReply();
-
-        final List<Map<String, String>> slaves = new ArrayList<>();
-        for (Object obj : reply) {
-            slaves.add(BuilderFactory.STRING_MAP.build((List) obj));
-        }
-        return slaves;
-    }
-
-    @Override
-    public String sentinelFailover(final String masterName) {
-        client.sentinel(Protocol.SENTINEL_FAILOVER, masterName);
-        return client.getStatusCodeReply();
-    }
-
-    @Override
-    public String sentinelMonitor(final String masterName, final String ip, final int port, final int quorum) {
-        client.sentinel(Protocol.SENTINEL_MONITOR, masterName, ip, String.valueOf(port),
-                String.valueOf(quorum));
-        return client.getStatusCodeReply();
-    }
-
-    @Override
-    public String sentinelRemove(final String masterName) {
-        client.sentinel(Protocol.SENTINEL_REMOVE, masterName);
-        return client.getStatusCodeReply();
-    }
-
-    @Override
-    public String sentinelSet(final String masterName, final Map<String, String> parameterMap) {
-        int index = 0;
-        int paramsLength = parameterMap.size() * 2 + 2;
-        String[] params = new String[paramsLength];
-
-        params[index++] = Protocol.SENTINEL_SET;
-        params[index++] = masterName;
-        for (Entry<String, String> entry : parameterMap.entrySet()) {
-            params[index++] = entry.getKey();
-            params[index++] = entry.getValue();
-        }
-
-        client.sentinel(params);
-        return client.getStatusCodeReply();
     }
 
     @Override
@@ -3613,6 +3455,7 @@ public class Jedis extends BinaryJedis implements BasicCommands, JedisCommands, 
         return client.getStatusCodeReply();
     }
 
+    @Override
     public String aclSetUser(String name, String... params) {
         client.aclSetUser(name, params);
         return client.getStatusCodeReply();
@@ -3985,6 +3828,171 @@ public class Jedis extends BinaryJedis implements BasicCommands, JedisCommands, 
     }
 
 
+
+
+
+
+    // 哨兵相关命令
+
+    /**
+     * redis 127.0.0.1:26381> sentinel masters
+     * 1)  1) "name"
+     *     2) "mymaster"
+     *     3) "ip"
+     *     4) "127.0.0.1"
+     *     5) "port"
+     *     6) "6379"
+     *     7) "runid"
+     *     8) "93d4d4e6e9c06d0eea36e27f31924ac26576081d"
+     *     9) "flags"
+     *    10) "master"
+     *    11) "pending-commands"
+     *    12) "0"
+     *    13) "last-ok-ping-reply"
+     *    14) "423"
+     *    15) "last-ping-reply"
+     *    16) "423"
+     *    17) "info-refresh"
+     *    18) "6107"
+     *    19) "num-slaves"
+     *    20) "1"
+     *    21) "num-other-sentinels"
+     *    22) "2"
+     *    23) "quorum"
+     *    24) "2"
+     *
+     *
+     * @return
+     */
+    @Override
+    @SuppressWarnings("rawtypes")
+    public List<Map<String, String>> sentinelMasters() {
+        client.sentinel(Protocol.SENTINEL_MASTERS);
+        final List<Object> reply = client.getObjectMultiBulkReply();
+
+        final List<Map<String, String>> masters = new ArrayList<>();
+        for (Object obj : reply) {
+            masters.add(BuilderFactory.STRING_MAP.build((List) obj));
+        }
+        return masters;
+    }
+
+    /**
+     * <pre>
+     * redis 127.0.0.1:26381&gt; sentinel get-master-addr-by-name mymaster
+     * 1) "127.0.0.1"
+     * 2) "6379"
+     * </pre>
+     *
+     * @param masterName
+     * @return two elements list of strings : host and port.
+     */
+    @Override
+    public List<String> sentinelGetMasterAddrByName(final String masterName) {
+        client.sentinel(Protocol.SENTINEL_GET_MASTER_ADDR_BY_NAME, masterName);
+        final List<Object> reply = client.getObjectMultiBulkReply();
+        return BuilderFactory.STRING_LIST.build(reply);
+    }
+
+    /**
+     * <pre>
+     * redis 127.0.0.1:26381&gt; sentinel reset mymaster
+     * (integer) 1
+     * </pre>
+     *
+     * @param pattern
+     * @return
+     */
+    @Override
+    public Long sentinelReset(final String pattern) {
+        client.sentinel(Protocol.SENTINEL_RESET, pattern);
+        return client.getIntegerReply();
+    }
+
+    /**
+     * <pre>
+     * redis 127.0.0.1:26381&gt; sentinel slaves mymaster
+     * 1)  1) "name"
+     *     2) "127.0.0.1:6380"
+     *     3) "ip"
+     *     4) "127.0.0.1"
+     *     5) "port"
+     *     6) "6380"
+     *     7) "runid"
+     *     8) "d7f6c0ca7572df9d2f33713df0dbf8c72da7c039"
+     *     9) "flags"
+     *    10) "slave"
+     *    11) "pending-commands"
+     *    12) "0"
+     *    13) "last-ok-ping-reply"
+     *    14) "47"
+     *    15) "last-ping-reply"
+     *    16) "47"
+     *    17) "info-refresh"
+     *    18) "657"
+     *    19) "master-link-down-time"
+     *    20) "0"
+     *    21) "master-link-status"
+     *    22) "ok"
+     *    23) "master-host"
+     *    24) "localhost"
+     *    25) "master-port"
+     *    26) "6379"
+     *    27) "slave-priority"
+     *    28) "100"
+     * </pre>
+     *
+     * @param masterName
+     * @return
+     */
+    @Override
+    @SuppressWarnings("rawtypes")
+    public List<Map<String, String>> sentinelSlaves(final String masterName) {
+        client.sentinel(Protocol.SENTINEL_SLAVES, masterName);
+        final List<Object> reply = client.getObjectMultiBulkReply();
+
+        final List<Map<String, String>> slaves = new ArrayList<>();
+        for (Object obj : reply) {
+            slaves.add(BuilderFactory.STRING_MAP.build((List) obj));
+        }
+        return slaves;
+    }
+
+    @Override
+    public String sentinelFailover(final String masterName) {
+        client.sentinel(Protocol.SENTINEL_FAILOVER, masterName);
+        return client.getStatusCodeReply();
+    }
+
+    @Override
+    public String sentinelMonitor(final String masterName, final String ip, final int port, final int quorum) {
+        client.sentinel(Protocol.SENTINEL_MONITOR, masterName, ip, String.valueOf(port),
+                String.valueOf(quorum));
+        return client.getStatusCodeReply();
+    }
+
+    @Override
+    public String sentinelRemove(final String masterName) {
+        client.sentinel(Protocol.SENTINEL_REMOVE, masterName);
+        return client.getStatusCodeReply();
+    }
+
+    @Override
+    public String sentinelSet(final String masterName, final Map<String, String> parameterMap) {
+        int index = 0;
+        int paramsLength = parameterMap.size() * 2 + 2;
+        String[] params = new String[paramsLength];
+
+        params[index++] = Protocol.SENTINEL_SET;
+        params[index++] = masterName;
+        for (Entry<String, String> entry : parameterMap.entrySet()) {
+            params[index++] = entry.getKey();
+            params[index++] = entry.getValue();
+        }
+
+        client.sentinel(params);
+        return client.getStatusCodeReply();
+    }
 
 
 

@@ -1886,7 +1886,7 @@ public interface JedisCommands {
     List<GeoRadiusResponse> georadiusByMemberReadonly(String key, String member, double radius, GeoUnit unit, GeoRadiusParam param);
 
 
-    // Redis Stream 特性是Redis 5.0之后才有的。Redis Stream的主要应用就是时间序列的消息流分发。PUB/SUB也可以做消息流分发，但是PUB/SUB不记录历史消息，而Redis Stream可以让任何客户端访问任何时刻的数据，并且能记住每一个客户端的访问位置，还能保证消息不丢失。
+    // Redis Streams 特性是Redis 5.0之后才有的。Redis Stream的主要应用就是时间序列的消息流分发。PUB/SUB也可以做消息流分发，但是PUB/SUB不记录历史消息，而Redis Stream可以让任何客户端访问任何时刻的数据，并且能记住每一个客户端的访问位置，还能保证消息不丢失。
     // 参考：https://blog.csdn.net/xxywxlyygx/article/details/98382181
 
     /**
