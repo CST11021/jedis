@@ -18,7 +18,7 @@ public class ZAddParams extends Params {
     }
 
     /**
-     * Only set the key if it does not already exist.
+     * 当key不存在时，添加成功
      *
      * @return ZAddParams
      */
@@ -28,7 +28,7 @@ public class ZAddParams extends Params {
     }
 
     /**
-     * Only set the key if it already exist.
+     * 当key存在时，添加成功
      *
      * @return ZAddParams
      */
@@ -38,8 +38,7 @@ public class ZAddParams extends Params {
     }
 
     /**
-     * Modify the return value from the number of new elements added to the total number of elements
-     * changed
+     * 返回更新的元素个数，包括添加的新元素以修改了分数的元素
      *
      * @return ZAddParams
      */

@@ -7,10 +7,37 @@ import java.util.Map;
 import java.util.Set;
 
 public interface MultiKeyCommands {
+
+    /**
+     * 批量删除键
+     *
+     * 127.0.0.1:6379> del names testKey1
+     * (integer) 2
+     *
+     *
+     * @param keys
+     * @return
+     */
     Long del(String... keys);
 
+    /**
+     * > unlink names testKey1
+     *
+     * 该命令和DEL十分相似：删除指定的key(s),若key不存在则该key被跳过。但是，相比DEL，del会产生阻塞，而该命令会在另一个线程中回收内存，因此它是非阻塞的。
+     * 这也是该命令名字的由来：仅将keys从keyspace元数据中删除，真正的删除会在后续异步操作。
+     *
+     * @param keys
+     * @return
+     */
     Long unlink(String... keys);
 
+    /**
+     * 127.0.0.1:6379> EXISTS names testKey
+     * (integer) 1
+     *
+     * @param keys
+     * @return
+     */
     Long exists(String... keys);
 
     List<String> blpop(int timeout, String... keys);

@@ -22,7 +22,7 @@ import java.util.Map.Entry;
  * SentinelCommands：        提供哨兵操作命令
  * ModuleCommands：          提供redis模块加载和卸载命令
  */
-public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommands, AdvancedJedisCommands, ScriptingCommands, BasicCommands, ClusterCommands, SentinelCommands, ModuleCommands {
+public class Jedis extends BinaryJedis implements BasicCommands, JedisCommands, MultiKeyCommands, AdvancedJedisCommands, ScriptingCommands, ClusterCommands, SentinelCommands, ModuleCommands {
 
     /** Jedis对象池： */
     protected JedisPoolAbstract dataSource = null;

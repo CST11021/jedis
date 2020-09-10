@@ -1301,110 +1301,561 @@ public interface JedisCommands {
 
     // 有序集合
 
+    /**
+     * # 添加单个元素
+     *
+     * redis> ZADD page_rank 10 google.com
+     * (integer) 1
+     *
+     *
+     * # 添加多个元素
+     *
+     * redis> ZADD page_rank 9 baidu.com 8 bing.com
+     * (integer) 2
+     *
+     * redis> ZRANGE page_rank 0 -1 WITHSCORES
+     * 1) "bing.com"
+     * 2) "8"
+     * 3) "baidu.com"
+     * 4) "9"
+     * 5) "google.com"
+     * 6) "10"
+     *
+     *
+     * # 添加已存在元素，且 score 值不变
+     *
+     * redis> ZADD page_rank 10 google.com
+     * (integer) 0
+     *
+     * redis> ZRANGE page_rank 0 -1 WITHSCORES  # 没有改变
+     * 1) "bing.com"
+     * 2) "8"
+     * 3) "baidu.com"
+     * 4) "9"
+     * 5) "google.com"
+     * 6) "10"
+     *
+     *
+     * # 添加已存在元素，但是改变 score 值
+     *
+     * redis> ZADD page_rank 6 bing.com
+     * (integer) 0
+     *
+     * redis> ZRANGE page_rank 0 -1 WITHSCORES  # bing.com 元素的 score 值被改变
+     * 1) "bing.com"
+     * 2) "6"
+     * 3) "baidu.com"
+     * 4) "9"
+     * 5) "google.com"
+     * 6) "10"
+     *
+     * 添加一个元素和其score值到有序集合中
+     *
+     * @param key
+     * @param score
+     * @param member
+     * @return
+     */
     Long zadd(String key, double score, String member);
-
     Long zadd(String key, double score, String member, ZAddParams params);
-
     Long zadd(String key, Map<String, Double> scoreMembers);
-
+    /**
+     * 添加多个元素和其score值到有序集合中
+     *
+     * @param key
+     * @param scoreMembers
+     * @param params
+     * @return
+     */
     Long zadd(String key, Map<String, Double> scoreMembers, ZAddParams params);
 
+    /**
+     * 127.0.0.1:6379> zadd numbers 1 1 2 2 3 3 4 4 5 5
+     * (integer) 5
+     * 127.0.0.1:6379> zrange numbers 0 2
+     * 1) "1"
+     * 2) "2"
+     * 3) "3"
+     *
+     * 获取指定区间内的集合元素
+     *
+     * @param key
+     * @param start
+     * @param stop
+     * @return
+     */
     Set<String> zrange(String key, long start, long stop);
 
+    /**
+     * 移除有序集key中的一个或多个成员，不存在的成员将被忽略
+     *
+     * @param key
+     * @param members
+     * @return
+     */
     Long zrem(String key, String... members);
 
+    /**
+     * 127.0.0.1:6379> zadd numbers 1 1 2 2 3 3 4 4 5 5
+     * (integer) 5
+     * 127.0.0.1:6379> ZINCRBY numbers 3 5
+     * "8"
+     *
+     * 为有序集 key 的成员 member 的 score 值加上增量 increment
+     *
+     * @param key
+     * @param increment
+     * @param member
+     * @return
+     */
     Double zincrby(String key, double increment, String member);
-
     Double zincrby(String key, double increment, String member, ZIncrByParams params);
 
+    /**
+     * 返回有序集 key 中成员 member 的排名，其中有序集成员按 score 值递增(从小到大)顺序排列
+     *
+     * redis> ZRANGE salary 0 -1 WITHSCORES        # 显示所有成员及其 score 值
+     * 1) "peter"
+     * 2) "3500"
+     * 3) "tom"
+     * 4) "4000"
+     * 5) "jack"
+     * 6) "5000"
+     *
+     * redis> ZRANK salary tom                     # 显示 tom 的薪水排名，第二
+     * (integer) 1
+     *
+     *
+     * @param key
+     * @param member
+     * @return
+     */
     Long zrank(String key, String member);
 
+    /**
+     * redis 127.0.0.1:6379> ZRANGE salary 0 -1 WITHSCORES     # 测试数据
+     * 1) "jack"
+     * 2) "2000"
+     * 3) "peter"
+     * 4) "3500"
+     * 5) "tom"
+     * 6) "5000"
+     *
+     * redis> ZREVRANK salary peter     # peter 的工资排第二
+     * (integer) 1
+     *
+     * redis> ZREVRANK salary tom       # tom 的工资最高
+     * (integer) 0
+     *
+     * 返回有序集 key 中成员 member 的排名。其中有序集成员按 score 值递减(从大到小)排序。
+     *
+     * @param key
+     * @param member
+     * @return
+     */
     Long zrevrank(String key, String member);
 
+    /**
+     * 对指定范围的元素进行排序，其成员按 score 值递减(从大到小)排序
+     *
+     * @param key
+     * @param start
+     * @param stop
+     * @return
+     */
     Set<String> zrevrange(String key, long start, long stop);
 
+    /**
+     * redis 127.0.0.1:6379> ZRANGE salary 0 -1 WITHSCORES     # 测试数据
+     * 1) "jack"
+     * 2) "2000"
+     * 3) "peter"
+     * 4) "3500"
+     * 5) "tom"
+     * 6) "5000"
+     *
+     * 返回有序集合指定区间内的元素，并携带分数
+     *
+     * @param key
+     * @param start
+     * @param stop
+     * @return
+     */
     Set<Tuple> zrangeWithScores(String key, long start, long stop);
 
+    /**
+     * 对指定范围的元素进行排序，其成员按 score 值递减(从大到小)排序，并且带分数
+     *
+     * @param key
+     * @param start
+     * @param stop
+     * @return
+     */
     Set<Tuple> zrevrangeWithScores(String key, long start, long stop);
 
+    /**
+     * 当 key 存在且是有序集类型时，返回有序集的基数。 当 key 不存在时，返回 0 。
+     *
+     * redis > ZADD salary 2000 tom    # 添加一个成员
+     * (integer) 1
+     *
+     * redis > ZCARD salary
+     * (integer) 1
+     *
+     * redis > ZADD salary 5000 jack   # 再添加一个成员
+     * (integer) 1
+     *
+     * redis > ZCARD salary
+     * (integer) 2
+     *
+     * redis > EXISTS non_exists_key   # 对不存在的 key 进行 ZCARD 操作
+     * (integer) 0
+     *
+     * redis > ZCARD non_exists_key
+     * (integer) 0
+     *
+     *
+     * @param key
+     * @return
+     */
     Long zcard(String key);
 
+    /**
+     * redis> ZRANGE salary 0 -1 WITHSCORES    # 测试数据
+     * 1) "tom"
+     * 2) "2000"
+     * 3) "peter"
+     * 4) "3500"
+     * 5) "jack"
+     * 6) "5000"
+     *
+     * redis> ZSCORE salary peter              # 注意返回值是字符串
+     * "3500"
+     *
+     * 返回有序集 key 中，成员 member 的 score 值。
+     *
+     * @param key
+     * @param member
+     * @return
+     */
     Double zscore(String key, String member);
 
+    /**
+     * 有序集合（SortedSet又称zset）是 Redis 的老牌数据结构之一， 它的 API 一直以来都是很稳定的， 基本上没有发生过变化，
+     * 但随着 Redis 5 的到来， 新版本 Redis 也给它加上了四个新的命令， 这些命令分别是：ZPOPMAX、ZPOPMIN、BZPOPMAX、BZPOPMIN
+     *
+     * 其中， ZPOPMAX 命令用于移除并弹出有序集合中分值最大的 count 个元素：
+     * 而 ZPOPMIN 命令则用于移除并弹出有序集合中分值最小的 count 个元素：
+     * BZPOPMAX 和 BZPOPMIN 是上述两个命令的阻塞变种， 这两个命令每次只能弹出单个元素， 但可以接受多个键作为被弹出的对象， 并且需要使用 timeout 参数去指定命令的最长阻塞时间：
+     * BZPOPMAX 命令和 BZPOPMIN 命令的行为跟 BLPOP 、 BRPOP 等命令的语义非常相似， 熟悉上述两个命令的读者应该不会对这两个新命令感到陌生。
+     *
+     *
+     * @param key
+     * @return
+     */
     Tuple zpopmax(String key);
-
     Set<Tuple> zpopmax(String key, int count);
-
     Tuple zpopmin(String key);
-
     Set<Tuple> zpopmin(String key, int count);
 
+    /**
+     * 返回有序集 key 中， score 值在 min 和 max 之间(默认包括 score 值等于 min 或 max )的成员的数量。
+     * redis> ZRANGE salary 0 -1 WITHSCORES    # 测试数据
+     * 1) "jack"
+     * 2) "2000"
+     * 3) "peter"
+     * 4) "3500"
+     * 5) "tom"
+     * 6) "5000"
+     *
+     * redis> ZCOUNT salary 2000 5000          # 计算薪水在 2000-5000 之间的人数
+     * (integer) 3
+     *
+     * redis> ZCOUNT salary 3000 5000          # 计算薪水在 3000-5000 之间的人数
+     * (integer) 2
+     *
+     * @param key
+     * @param min
+     * @param max
+     * @return
+     */
     Long zcount(String key, double min, double max);
-
     Long zcount(String key, String min, String max);
 
+    /**
+     * 返回有序集 key 中，所有 score 值介于 min 和 max 之间(包括等于 min 或 max )的成员。有序集成员按 score 值递增(从小到大)次序排列。
+     *
+     * 具有相同 score 值的成员按字典序(lexicographical order)来排列(该属性是有序集提供的，不需要额外的计算)。
+     *
+     * 可选的 LIMIT 参数指定返回结果的数量及区间(就像SQL中的 SELECT LIMIT offset, count )，注意当 offset 很大时，定位 offset 的操作可能需要遍历整个有序集，此过程最坏复杂度为 O(N) 时间。
+     *
+     * 可选的 WITHSCORES 参数决定结果集是单单返回有序集的成员，还是将有序集成员及其 score 值一起返回。 该选项自 Redis 2.0 版本起可用。
+     *
+     * 区间及无限
+     * min 和 max 可以是 -inf 和 +inf ，这样一来，你就可以在不知道有序集的最低和最高 score 值的情况下，使用 ZRANGEBYSCORE 这类命令。
+     *
+     * 默认情况下，区间的取值使用闭区间 (小于等于或大于等于)，你也可以通过给参数前增加 ( 符号来使用可选的开区间 (小于或大于)。
+     *
+     * 举个例子：
+     *
+     * ZRANGEBYSCORE zset (1 5
+     * 返回所有符合条件 1 < score <= 5 的成员，而
+     *
+     * ZRANGEBYSCORE zset (5 (10
+     * 则返回所有符合条件 5 < score < 10 的成员。
+     *
+     * 返回值
+     * 指定区间内，带有 score 值(可选)的有序集成员的列表。
+     *
+     * 代码示例
+     * redis> ZADD salary 2500 jack                        # 测试数据
+     * (integer) 0
+     * redis> ZADD salary 5000 tom
+     * (integer) 0
+     * redis> ZADD salary 12000 peter
+     * (integer) 0
+     *
+     * redis> ZRANGEBYSCORE salary -inf +inf               # 显示整个有序集
+     * 1) "jack"
+     * 2) "tom"
+     * 3) "peter"
+     *
+     * redis> ZRANGEBYSCORE salary -inf +inf WITHSCORES    # 显示整个有序集及成员的 score 值
+     * 1) "jack"
+     * 2) "2500"
+     * 3) "tom"
+     * 4) "5000"
+     * 5) "peter"
+     * 6) "12000"
+     *
+     * redis> ZRANGEBYSCORE salary -inf 5000 WITHSCORES    # 显示工资 <=5000 的所有成员
+     * 1) "jack"
+     * 2) "2500"
+     * 3) "tom"
+     * 4) "5000"
+     *
+     * redis> ZRANGEBYSCORE salary (5000 400000            # 显示工资大于 5000 小于等于 400000 的成员
+     * 1) "peter"
+     *
+     * @param key
+     * @param min
+     * @param max
+     * @return
+     */
     Set<String> zrangeByScore(String key, double min, double max);
-
     Set<String> zrangeByScore(String key, String min, String max);
-
-    Set<String> zrevrangeByScore(String key, double max, double min);
-
     Set<String> zrangeByScore(String key, double min, double max, int offset, int count);
-
-    Set<String> zrevrangeByScore(String key, String max, String min);
-
     Set<String> zrangeByScore(String key, String min, String max, int offset, int count);
-
-    Set<String> zrevrangeByScore(String key, double max, double min, int offset, int count);
-
     Set<Tuple> zrangeByScoreWithScores(String key, double min, double max);
-
-    Set<Tuple> zrevrangeByScoreWithScores(String key, double max, double min);
-
     Set<Tuple> zrangeByScoreWithScores(String key, double min, double max, int offset, int count);
-
-    Set<String> zrevrangeByScore(String key, String max, String min, int offset, int count);
-
     Set<Tuple> zrangeByScoreWithScores(String key, String min, String max);
-
-    Set<Tuple> zrevrangeByScoreWithScores(String key, String max, String min);
-
     Set<Tuple> zrangeByScoreWithScores(String key, String min, String max, int offset, int count);
 
-    Set<Tuple> zrevrangeByScoreWithScores(String key, double max, double min, int offset, int count);
+    // 同zrangeByScore，只不过zrevrangeByScore按从大到小排序
 
+    Set<String> zrevrangeByScore(String key, double max, double min);
+    Set<String> zrevrangeByScore(String key, String max, String min);
+    Set<String> zrevrangeByScore(String key, double max, double min, int offset, int count);
+    Set<String> zrevrangeByScore(String key, String max, String min, int offset, int count);
+    Set<Tuple> zrevrangeByScoreWithScores(String key, double max, double min);
+    Set<Tuple> zrevrangeByScoreWithScores(String key, double max, double min, int offset, int count);
+    Set<Tuple> zrevrangeByScoreWithScores(String key, String max, String min);
     Set<Tuple> zrevrangeByScoreWithScores(String key, String max, String min, int offset, int count);
 
+    /**
+     * 移除有序集 key 中，指定排名(rank)区间内的所有成员
+     *
+     * redis> ZADD salary 2000 jack
+     * (integer) 1
+     * redis> ZADD salary 5000 tom
+     * (integer) 1
+     * redis> ZADD salary 3500 peter
+     * (integer) 1
+     *
+     * redis> ZREMRANGEBYRANK salary 0 1       # 移除下标 0 至 1 区间内的成员
+     * (integer) 2
+     *
+     * redis> ZRANGE salary 0 -1 WITHSCORES    # 有序集只剩下一个成员
+     * 1) "tom"
+     * 2) "5000"
+     *
+     *
+     * @param key
+     * @param start
+     * @param stop
+     * @return
+     */
     Long zremrangeByRank(String key, long start, long stop);
 
+    /**
+     * 移除有序集 key 中，所有 score 值介于 min 和 max 之间(包括等于 min 或 max )的成员
+     *
+     * redis> ZRANGE salary 0 -1 WITHSCORES          # 显示有序集内所有成员及其 score 值
+     * 1) "tom"
+     * 2) "2000"
+     * 3) "peter"
+     * 4) "3500"
+     * 5) "jack"
+     * 6) "5000"
+     *
+     * redis> ZREMRANGEBYSCORE salary 1500 3500      # 移除所有薪水在 1500 到 3500 内的员工
+     * (integer) 2
+     *
+     * redis> ZRANGE salary 0 -1 WITHSCORES          # 剩下的有序集成员
+     * 1) "jack"
+     * 2) "5000"
+     *
+     *
+     * @param key
+     * @param min
+     * @param max
+     * @return
+     */
     Long zremrangeByScore(String key, double min, double max);
-
     Long zremrangeByScore(String key, String min, String max);
 
+    /**
+     * 对于一个所有成员的分值都相同的有序集合键 key 来说， 这个命令会返回该集合中， 成员介于 min 和 max 范围内的元素数量。
+     *
+     * 这个命令的 min 参数和 max 参数的意义和 ZRANGEBYLEX key min max [LIMIT offset count] 命令的 min 参数和 max 参数的意义一样。
+     *
+     * redis> ZADD myzset 0 a 0 b 0 c 0 d 0 e
+     * (integer) 5
+     *
+     * redis> ZADD myzset 0 f 0 g
+     * (integer) 2
+     *
+     * redis> ZLEXCOUNT myzset - +
+     * (integer) 7
+     *
+     * redis> ZLEXCOUNT myzset [b [f
+     * (integer) 5
+     *
+     * @param key
+     * @param min
+     * @param max
+     * @return
+     */
     Long zlexcount(String key, String min, String max);
 
+    /**
+     * edis> ZADD myzset 0 a 0 b 0 c 0 d 0 e 0 f 0 g
+     * (integer) 7
+     *
+     * redis> ZRANGEBYLEX myzset - [c
+     * 1) "a"
+     * 2) "b"
+     * 3) "c"
+     *
+     * redis> ZRANGEBYLEX myzset - (c
+     * 1) "a"
+     * 2) "b"
+     *
+     * redis> ZRANGEBYLEX myzset [aaa (g
+     * 1) "b"
+     * 2) "c"
+     * 3) "d"
+     * 4) "e"
+     * 5) "f"
+     *
+     * 同zlexcount命令，只不过该命令返回元素，不返回统计的个数
+     *
+     * @param key
+     * @param min
+     * @param max
+     * @return
+     */
     Set<String> zrangeByLex(String key, String min, String max);
-
     Set<String> zrangeByLex(String key, String min, String max, int offset, int count);
 
+    /**
+     * 127.0.0.1:6379> zrevrangeByLex myzset - (c
+     * (empty list or set)
+     * 127.0.0.1:6379> zrevrangeByLex myzset  (c -
+     * 1) "b"
+     * 2) "a"
+     *
+     * 同zrangeByLex命令，只不过该命令按从大到小排序
+     *
+     * @param key
+     * @param max
+     * @param min
+     * @return
+     */
     Set<String> zrevrangeByLex(String key, String max, String min);
-
     Set<String> zrevrangeByLex(String key, String max, String min, int offset, int count);
 
+    /**
+     * 对于一个所有成员的分值都相同的有序集合键 key 来说， 这个命令会移除该集合中， 成员介于 min 和 max 范围内的所有元素。
+     *
+     * redis> ZADD myzset 0 aaaa 0 b 0 c 0 d 0 e
+     * (integer) 5
+     *
+     * redis> ZADD myzset 0 foo 0 zap 0 zip 0 ALPHA 0 alpha
+     * (integer) 5
+     *
+     * redis> ZRANGE myzset 0 -1
+     * 1) "ALPHA"
+     * 2) "aaaa"
+     * 3) "alpha"
+     * 4) "b"
+     * 5) "c"
+     * 6) "d"
+     * 7) "e"
+     * 8) "foo"
+     * 9) "zap"
+     * 10) "zip"
+     *
+     * redis> ZREMRANGEBYLEX myzset [alpha [omega
+     * (integer) 6
+     *
+     * redis> ZRANGE myzset 0 -1
+     * 1) "ALPHA"
+     * 2) "aaaa"
+     * 3) "zap"
+     * 4) "zip"
+     *
+     * @param key
+     * @param min
+     * @param max
+     * @return
+     */
     Long zremrangeByLex(String key, String min, String max);
 
     ScanResult<Tuple> zscan(String key, String cursor);
-
     ScanResult<Tuple> zscan(String key, String cursor, ScanParams params);
 
 
-    // HyperLogLog
+    // HyperLogLog：用于统计集合中的元素基数数量
 
+    /**
+     * redis> PFADD  databases  "Redis"  "MongoDB"  "MySQL"
+     * (integer) 1
+     *
+     * redis> PFCOUNT  databases
+     * (integer) 3
+     *
+     * redis> PFADD  databases  "Redis"    # Redis 已经存在，不必对估计数量进行更新
+     * (integer) 0
+     *
+     * redis> PFCOUNT  databases    # 元素估计数量没有变化
+     * (integer) 3
+     *
+     * redis> PFADD  databases  "PostgreSQL"    # 添加一个不存在的元素
+     * (integer) 1
+     *
+     * redis> PFCOUNT  databases    # 估计数量增一
+     * 4
+     *
+     * @param key
+     * @param elements
+     * @return
+     */
     Long pfadd(String key, String... elements);
     long pfcount(String key);
 
 
-    // Geo Commands
+    // Geo Commands：GEO特性是Redis 3.2版本的特性，这个功能可以将用户给定的地理位置信息储存起来， 并对这些信息进行操作，使用该命令可以实现“查找附近的人”以及“摇一摇”等功能
 
     Long geoadd(String key, double longitude, double latitude, String member);
 
@@ -1435,7 +1886,8 @@ public interface JedisCommands {
     List<GeoRadiusResponse> georadiusByMemberReadonly(String key, String member, double radius, GeoUnit unit, GeoRadiusParam param);
 
 
-    // Redis5.0 新特性：Streams数据结构结构相关命令
+    // Redis Stream 特性是Redis 5.0之后才有的。Redis Stream的主要应用就是时间序列的消息流分发。PUB/SUB也可以做消息流分发，但是PUB/SUB不记录历史消息，而Redis Stream可以让任何客户端访问任何时刻的数据，并且能记住每一个客户端的访问位置，还能保证消息不丢失。
+    // 参考：https://blog.csdn.net/xxywxlyygx/article/details/98382181
 
     /**
      * XADD key ID field string [field string ...]

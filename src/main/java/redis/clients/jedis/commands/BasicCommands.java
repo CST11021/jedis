@@ -147,6 +147,10 @@ public interface BasicCommands {
     /**
      * 返回成功执行的最后一个数据库保存的 UNIX TIME
      *
+     * 127.0.0.1:6379> lastsave
+     * (integer) 1599704585
+     *
+     *
      * @return the unix latest save
      */
     Long lastsave();

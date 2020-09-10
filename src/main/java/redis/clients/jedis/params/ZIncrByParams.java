@@ -32,7 +32,7 @@ public class ZIncrByParams extends Params {
     }
 
     /**
-     * Only set the key if it does not already exist.
+     * 当key不存在时，修改成功
      *
      * @return ZIncrByParams
      */
@@ -42,7 +42,7 @@ public class ZIncrByParams extends Params {
     }
 
     /**
-     * Only set the key if it already exist.
+     * 当key存在时，修改成功
      *
      * @return ZIncrByParams
      */
