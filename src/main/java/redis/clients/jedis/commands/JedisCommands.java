@@ -869,6 +869,8 @@ public interface JedisCommands {
     // List（列表）
 
     /**
+     * > rpush names zhangsan lisi
+     *
      *
      *
      * @param key
@@ -877,57 +879,423 @@ public interface JedisCommands {
      */
     Long rpush(String key, String... string);
 
+    /**
+     *
+     *
+     * @param key
+     * @param string
+     * @return
+     */
     Long lpush(String key, String... string);
 
+    /**
+     * 127.0.0.1:6379> rpush names zhangsan lisi
+     * (integer) 2
+     * 127.0.0.1:6379> llen names
+     * (integer) 2
+     *
+     * 获取列表的元素个数
+     *
+     * @param key
+     * @return
+     */
     Long llen(String key);
 
+    /**
+     * 127.0.0.1:6379> lrange names 0 5
+     * 1) "wangwu"
+     * 2) "zhangsan"
+     * 3) "lisi"
+     *
+     * 获取指定索引返回内的元素，以从左到右的顺序返回
+     *
+     * @param key
+     * @param start
+     * @param stop
+     * @return
+     */
     List<String> lrange(String key, long start, long stop);
 
+    /**
+     * 127.0.0.1:6379> lrange names 0 5
+     * 1) "wangwu"
+     * 2) "zhangsan"
+     * 3) "lisi"
+     * 4) "liuliu"
+     * 127.0.0.1:6379> ltrim names 1 2
+     * OK
+     * 127.0.0.1:6379> lrange names 0 5
+     * 1) "zhangsan"
+     * 2) "lisi"
+     *
+     * 保留指定区间的元素，区间外的元素从列表中移除
+     *
+     * @param key
+     * @param start
+     * @param stop
+     * @return
+     */
     String ltrim(String key, long start, long stop);
 
+    /**
+     * 127.0.0.1:6379> lindex names 0
+     * "zhangsan"
+     *
+     * 获取指定索引位置的元素
+     *
+     * @param key
+     * @param index
+     * @return
+     */
     String lindex(String key, long index);
 
+    /**
+     * 127.0.0.1:6379> lset names 5 wangwu
+     * (error) ERR index out of range
+     * 127.0.0.1:6379> lset names 0 wangwu
+     * OK
+     *
+     * 替换索引位置的元素，如果索引超出列表的范围，则抛出异常
+     *
+     * @param key
+     * @param index
+     * @param value
+     * @return
+     */
     String lset(String key, long index, String value);
 
+    /**
+     * # 先创建一个表，内容排列是
+     * # morning hello morning helllo morning
+     *
+     * redis> LPUSH greet "morning"
+     * (integer) 1
+     * redis> LPUSH greet "hello"
+     * (integer) 2
+     * redis> LPUSH greet "morning"
+     * (integer) 3
+     * redis> LPUSH greet "hello"
+     * (integer) 4
+     * redis> LPUSH greet "morning"
+     * (integer) 5
+     *
+     * redis> LRANGE greet 0 4         # 查看所有元素
+     * 1) "morning"
+     * 2) "hello"
+     * 3) "morning"
+     * 4) "hello"
+     * 5) "morning"
+     *
+     * redis> LREM greet 2 morning     # 移除从表头到表尾，最先发现的两个 morning
+     * (integer) 2                     # 两个元素被移除
+     *
+     * redis> LLEN greet               # 还剩 3 个元素
+     * (integer) 3
+     *
+     * redis> LRANGE greet 0 2
+     * 1) "hello"
+     * 2) "hello"
+     * 3) "morning"
+     *
+     * redis> LREM greet -1 morning    # 移除从表尾到表头，第一个 morning
+     * (integer) 1
+     *
+     * redis> LLEN greet               # 剩下两个元素
+     * (integer) 2
+     *
+     * redis> LRANGE greet 0 1
+     * 1) "hello"
+     * 2) "hello"
+     *
+     * redis> LREM greet 0 hello      # 移除表中所有 hello
+     * (integer) 2                    # 两个 hello 被移除
+     *
+     * redis> LLEN greet
+     * (integer) 0
+     *
+     *
+     * 移除与value值相等元素
+     *
+     * @param key       key
+     * @param count     移除的个数
+     * @param value     要移除的元素
+     * @return
+     */
     Long lrem(String key, long count, String value);
 
+    /**
+     * 127.0.0.1:6379> lpop names
+     * "wangwu"
+     *
+     * 从列表左边开始，返回第一元素，并从列表中移除
+     * @param key
+     * @return
+     */
     String lpop(String key);
 
+    /**
+     * 127.0.0.1:6379> rpop names
+     * "wangwu"
+     *
+     * 从列表右边开始，返回第一元素，并从列表中移除
+     *
+     * @param key
+     * @return
+     */
     String rpop(String key);
 
+    /**
+     * redis> RPUSH mylist "Hello"
+     * (integer) 1
+     *
+     * redis> RPUSH mylist "World"
+     * (integer) 2
+     *
+     * redis> LINSERT mylist BEFORE "World" "There"
+     * (integer) 3
+     *
+     * redis> LRANGE mylist 0 -1
+     * 1) "Hello"
+     * 2) "There"
+     * 3) "World"
+     *
+     *
+     * # 对一个非空列表插入，查找一个不存在的 pivot
+     *
+     * redis> LINSERT mylist BEFORE "go" "let's"
+     * (integer) -1                                    # 失败
+     *
+     *
+     *
+     * 将值 value 插入到列表 key 当中，位于值 pivot 之前或之后
+     *
+     *
+     * @param key
+     * @param where
+     * @param pivot
+     * @param value
+     * @return
+     */
     Long linsert(String key, ListPosition where, String pivot, String value);
 
+    /**
+     * 将值 value 插入到列表 key 的表头，当且仅当 key 存在并且是一个列表
+     *
+     * @param key
+     * @param string
+     * @return
+     */
     Long lpushx(String key, String... string);
 
+    /**
+     * 将值 value 插入到列表 key 的表尾，当且仅当 key 存在并且是一个列表
+     *
+     * @param key
+     * @param string
+     * @return
+     */
     Long rpushx(String key, String... string);
 
+    /**
+     * 同lpop命令，只不过blpop命令是阻塞的，如果列表key不存在，或者列表为空，则该命令会一直阻塞，直到另一客户端插入一个元素
+     *
+     * redis> EXISTS job                # 确保两个 key 都不存在
+     * (integer) 0
+     * redis> EXISTS command
+     * (integer) 0
+     *
+     * redis> BLPOP job command 300     # 因为key一开始不存在，所以操作会被阻塞，直到另一客户端对 job 或者 command 列表进行 PUSH 操作。
+     * 1) "job"                         # 这里被 push 的是 job
+     * 2) "do my home work"             # 被弹出的值
+     * (26.26s)                         # 等待的秒数
+     *
+     * redis> BLPOP job command 5       # 等待超时的情况
+     * (nil)
+     * (5.66s)                          # 等待的秒数
+     *
+     *
+     * @param timeout   阻塞时等待的时间，单位为秒
+     * @param key
+     * @return
+     */
     List<String> blpop(int timeout, String key);
 
+    /**
+     * 同blpop命令
+     *
+     * @param timeout
+     * @param key
+     * @return
+     */
     List<String> brpop(int timeout, String key);
 
 
     // Set（集合）
 
+    /**
+     * 127.0.0.1:6379> sadd numbers 1 2 8 3 5
+     * (integer) 5
+     *
+     * 将元素放入集合中，集合是无序的
+     *
+     * @param key
+     * @param member
+     * @return
+     */
     Long sadd(String key, String... member);
 
+    /**
+     * 127.0.0.1:6379> sadd numbers 1 2 8 3 5
+     * (integer) 5
+     * 127.0.0.1:6379> smembers numbers
+     * 1) "1"
+     * 2) "2"
+     * 3) "3"
+     * 4) "5"
+     * 5) "8"
+     *
+     * 获取集合内的元素
+     *
+     * @param key
+     * @return
+     */
     Set<String> smembers(String key);
 
+    /**
+     * # 测试数据
+     *
+     * redis> SMEMBERS languages
+     * 1) "c"
+     * 2) "lisp"
+     * 3) "python"
+     * 4) "ruby"
+     *
+     *
+     * # 移除单个元素
+     *
+     * redis> SREM languages ruby
+     * (integer) 1
+     *
+     *
+     * # 移除不存在元素
+     *
+     * redis> SREM languages non-exists-language
+     * (integer) 0
+     *
+     *
+     * # 移除多个元素
+     *
+     * redis> SREM languages lisp python c
+     * (integer) 3
+     *
+     * redis> SMEMBERS languages
+     * (empty list or set)
+     *
+     *
+     * 移除集合中的元素
+     *
+     * @param key
+     * @param member
+     * @return
+     */
     Long srem(String key, String... member);
 
+    /**
+     * 127.0.0.1:6379> smembers numbers
+     * 1) "1"
+     * 2) "2"
+     * 3) "3"
+     * 4) "5"
+     * 5) "8"
+     * 127.0.0.1:6379> spop numbers
+     * "3"
+     *
+     * 移除并返回集合中的一个随机元素
+     *
+     * @param key
+     * @return
+     */
     String spop(String key);
 
+    /**
+     * 127.0.0.1:6379> spop numbers 3
+     * 1) "8"
+     * 2) "5"
+     * 3) "1"
+     *
+     * 移除并返回集合中的count个随机元素
+     *
+     * @param key
+     * @param count
+     * @return
+     */
     Set<String> spop(String key, long count);
 
+    /**
+     * redis> SADD tool pc printer phone
+     * (integer) 3
+     *
+     * redis> SCARD tool   # 非空集合
+     * (integer) 3
+     *
+     * redis> DEL tool
+     * (integer) 1
+     *
+     * redis> SCARD tool   # 空集合
+     * (integer) 0
+     *
+     * 获取集合的基数（即集合中的元素个数）
+     *
+     * @param key
+     * @return
+     */
     Long scard(String key);
 
+    /**
+     * 127.0.0.1:6379> sismember numbers 2
+     * (integer) 1
+     *
+     * 判断 member 元素是否集合 key 的成员
+     *
+     * @param key
+     * @param member
+     * @return
+     */
     Boolean sismember(String key, String member);
 
+    /**
+     * 127.0.0.1:6379> srandmember numbers
+     * "2"
+     *
+     * 随机返回集合中的一个元素，但不删除
+     *
+     * @param key
+     * @return
+     */
     String srandmember(String key);
 
+    /**
+     * 127.0.0.1:6379> spop numbers 3
+     * 1) "8"
+     * 2) "5"
+     * 3) "1"
+     *
+     * 随机返回集合中的count个元素，但不删除
+     *
+     * @param key
+     * @param count
+     * @return
+     */
     List<String> srandmember(String key, int count);
 
+    /**
+     * 迭代集合中的元素
+     *
+     * @param key
+     * @param cursor
+     * @return
+     */
     ScanResult<String> sscan(String key, String cursor);
-
     ScanResult<String> sscan(String key, String cursor, ScanParams params);
 
 
