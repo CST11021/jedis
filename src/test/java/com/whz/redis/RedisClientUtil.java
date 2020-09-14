@@ -18,6 +18,10 @@ public final class RedisClientUtil {
     }
 
     public static synchronized Jedis getJedis() {
+        return getJedis(host, port);
+    }
+
+    public static synchronized Jedis getJedis(String host, Integer port) {
         if (jedisPool == null) {
             JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
             //指定连接池中最大空闲连接数

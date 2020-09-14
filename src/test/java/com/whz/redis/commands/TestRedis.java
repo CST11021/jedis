@@ -190,4 +190,10 @@ public class TestRedis {
         // System.out.println(jedis.lrange("a", -1));
     }
 
+    @Test
+    public void testSentinelMasters() {
+        List<Map<String, String>> list = jedis.sentinelMasters();
+        System.out.println(list);
+    }
+
 }

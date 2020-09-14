@@ -5,6 +5,7 @@ import redis.clients.jedis.ClusterReset;
 import java.util.List;
 
 public interface ClusterCommands {
+
     String clusterNodes();
 
     String clusterMeet(String ip, int port);
